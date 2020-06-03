@@ -1,0 +1,1279 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function webpdrupal7_menu() {
+  $items = array();
+
+  $items['admin/config/development/webpdrupal7'] = array(
+    'title' => 'Webp For Drupal 7',
+    'description' => 'Configuration for Webp & LazyLoading module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webpdrupal7_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  // settings
+  $items['admin/config/development/webpdrupal7/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Configuration for Webp & LazyLoading module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webpdrupal7_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  // export
+  $items['admin/config/development/webpdrupal7/export'] = array(
+    'title' => 'Export',
+    'description' => 'Export configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webpdrupal7_export_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+
+  // import
+  $items['admin/config/development/webpdrupal7/import'] = array(
+    'title' => 'Import',
+    'description' => 'Import configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webpdrupal7_import_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+
+  return $items;
+}
+
+
+/**
+ * Page callback: Current posts settings
+ *
+ * @see current_posts_menu()
+ */
+function webpdrupal7_form($form, &$form_state) {
+
+  // webp
+  $form['webpdrupal7_webp'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('WebP-processing options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+    // checker
+  $temporary = variable_get('webpdrupal7_processor_path');
+  if (!$temporary){
+    $temporary = drupal_get_path('module', 'webpdrupal7').'/core_scripts';
+  }
+  $temporary .= '/_staff/checkWebpSupport.php';
+  $temporary = file_create_url($temporary);
+
+  $form['webpdrupal7_webp']['check_abletoconvert'] = array(
+    '#markup' => t('<p><span style="color: red">Warning!</span> First, you need to check, is your server able to convert to webp.<br />Use <a href="'.$temporary.'" target="_blank">this</a> to check it.</p><p>In case of failure, you still can use cloud converter (wpc), options for that are below in <a href="#edit-converter">"WEBP-CONVERTER OPTIONS"</a> section.</p><hr />'),
+  );
+
+    // img - true/false
+  $form['webpdrupal7_webp']['webpdrupal7_webp_imgprocess'] = array(
+      '#type' => 'select',
+      '#title' => t('Process &lt;img&gt;:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_webp_imgprocess', 0),
+      //'#description' => t(''),
+  );
+
+    // img - store webp in
+  $form['webpdrupal7_webp']['webpdrupal7_webp_img_storewebpin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Attribute contained webp-version of image:'),
+    '#default_value' => variable_get('webpdrupal7_webp_img_storewebpin', 'srcset'),
+    //'#description' => t('The maximum number of links to display in the block.'),
+  );
+
+    // img - by selector
+  $form['webpdrupal7_webp']['webpdrupal7_webp_img_byselector'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Process imgs ONLY by selector:'),
+    '#default_value' => variable_get('webpdrupal7_webp_img_byselector', ''),
+    '#description' => t('Empty or comma-separated CSS-selector'),
+  );
+
+    // img - filter by extensions
+  $form['webpdrupal7_webp']['webpdrupal7_webp_img_extensions'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Filter imgs by extension (listed allowed):'),
+    '#default_value' => variable_get('webpdrupal7_webp_img_extensions', ''),
+    '#description' => t('Empty or comma-separated allowed extensions'),
+  );
+
+    // process in additional tags
+  $form['webpdrupal7_webp']['webpdrupal7_webp_additionaltags'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Add selectors for converting to webp:'),
+    '#default_value' => variable_get('webpdrupal7_webp_additionaltags', ''),
+    '#description' => t('Div with inline background-image, for example. Empty or comma-separated selectors'),
+  );
+
+    // ignore webp-convertation
+  $form['webpdrupal7_webp']['webpdrupal7_webp_dontprocess'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ignore webp-converting on:'),
+    '#default_value' => variable_get('webpdrupal7_webp_dontprocess', ''),
+    '#maxlength' => 255,
+    '#description' => t("Only single-level selectors! 'img.classname', for example. This elems will haven't webp-version"),
+  );
+
+    // force webp convert
+  $form['webpdrupal7_webp']['webpdrupal7_webp_force'] = array(
+      '#type' => 'select',
+      '#title' => t('Force webp-storing even for unsupported browsers:'),
+      '#options' => array(
+        0 => t('No (without caching, pages are generated for each visitor separatelly)'),
+        1 => t('Yes (if drupal/external caching is enabled)'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_webp_force', 0),
+      '#description' => t('Force storing webp-version. It will be useful in case using drupal caching (for prevent generate non-webp cached page once and for next 6 hours). Recommended with use "srcset" for storing webp-version.'),
+  );
+
+    // add js-helper to prevent unsupported Safari/IE see webp-versions. Needed if you dont use nginx/apache rewrite rules for serving webp or you are behind of CDN.
+  $form['webpdrupal7_webp']['webpdrupal7_webp_force_jshelper'] = array(
+      '#type' => 'select',
+      '#title' => t('Add js-helper for prevent showing .webp in unsupported browsers:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_webp_force_jshelper', 0),
+      '#description' => t('Needed if you used caching and dont use nginx/apache rewrite rules for serving webp (you are behind of CDN, for example). Helper will check browser on client-side, then will modify src/srcset/data-* attributes to remove ".webp".'),
+  );
+
+    // converter options
+  $form['webpdrupal7_webp']['converter'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('WebP-converter options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+    // quality
+  $form['webpdrupal7_webp']['converter']['webpdrupal7_webp_quality'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Quality:'),
+    '#default_value' => variable_get('webpdrupal7_webp_quality', '90'),
+    '#maxlength' => 255,
+    '#description' => t("Quality of webp-images"),
+  );
+  /*  // near-lossless
+  $form['webpdrupal7_webp']['converter']['webpdrupal7_webp_nearlossless'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Near-lossless:'),
+    '#default_value' => variable_get('webpdrupal7_webp_nearlossless', ''),
+    '#maxlength' => 255,
+    '#description' => t("Specify the level of near-lossless image preprocessing. This option adjusts pixel values to help compressibility, but has minimal impact on the visual quality. It triggers lossless compression mode automatically. The range is 0 (maximum preprocessing) to 100 (no preprocessing). The default value is around 60."),
+  );*/
+    // jpeg-specific quality options
+  $form['webpdrupal7_webp']['converter']['jpeg'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Jpeg-specific options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // jpeg auto
+  $form['webpdrupal7_webp']['converter']['jpeg']['webpdrupal7_webp_jpeg_quality'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Quality:'),
+    '#default_value' => variable_get('webpdrupal7_webp_jpeg_quality', 'auto'),
+    '#maxlength' => 255,
+    '#description' => t('Quality of jpeg, "auto" or number.'),
+  );
+    // jpeg max-quality. Used if quality = auto
+  $form['webpdrupal7_webp']['converter']['jpeg']['webpdrupal7_webp_jpeg_maxquality'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Max quality:'),
+    '#default_value' => variable_get('webpdrupal7_webp_jpeg_maxquality', '95'),
+    '#maxlength' => 255,
+    '#description' => t('Jpeg max-quality. Used if quality = auto.'),
+  );
+    // jpeg max-quality. Used if quality = auto
+  $form['webpdrupal7_webp']['converter']['jpeg']['webpdrupal7_webp_jpeg_defquality'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default quality:'),
+    '#default_value' => variable_get('webpdrupal7_webp_jpeg_defquality', ''),
+    '#maxlength' => 255,
+    '#description' => t('Fallback quality if quality detection isnt working. If didnt set, will use global quality value.'),
+  );
+
+    // cloud converter options
+  $form['webpdrupal7_webp']['converter']['wpc'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cloud converter options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // crypt api key
+  $form['webpdrupal7_webp']['converter']['wpc']['webpdrupal7_wpc_crypt'] = array(
+    '#type' => 'select',
+    '#title' => t('Crypt api-key in transfer:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_wpc_crypt', 0),
+    //'#description' => t(''),
+  );
+    // wpc key
+  $form['webpdrupal7_webp']['converter']['wpc']['webpdrupal7_wpc_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Key:'),
+    '#default_value' => variable_get('webpdrupal7_wpc_key', ''),
+    '#maxlength' => 255,
+    '#description' => t('Pass-phrase for cloud converter.'),
+  );
+    // wpc key
+  $form['webpdrupal7_webp']['converter']['wpc']['webpdrupal7_wpc_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Url:'),
+    '#default_value' => variable_get('webpdrupal7_wpc_url', ''),
+    '#maxlength' => 255,
+    '#description' => t('URL of cloud converter.'),
+  );
+
+  $form['webpdrupal7_webp']['converter']['precompiled'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Precompiled binaries options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // try precompiled binaies
+  $form['webpdrupal7_webp']['converter']['precompiled']['webpdrupal7_webp_try_binaries'] = array(
+    '#type' => 'select',
+    '#title' => t('Try precompiled binaries:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_webp_try_binaries', 0),
+    '#description' => t('If your server havent built-in webp-converters, you can try compiled binaries from rosell-dk packet.'),
+  );
+  // Path for a precompiled binaries
+  $form['webpdrupal7_webp']['converter']['precompiled']['webpdrupal7_webp_precompiled_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Precompiled cwebp-binaries are stored in:'),
+    '#default_value' => variable_get('webpdrupal7_webp_precompiled_path', drupal_get_path('module', 'webpdrupal7').'/core_scripts/libs/WebpConvert/vendor/rosell-dk/webp-convert/src/Convert/Converters/Binaries'),
+    '#description' => t('Empty or "sites/all/modules/webpdrupal7/core_scripts"-like path'),
+    '#maxlength' => 255,
+  );
+
+    // reconvert based on date
+  $form['webpdrupal7_webp']['webpdrupal7_webp_reconvert_bydate'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Reconvert if existing .webp is older than this timestamp:'),
+    '#default_value' => variable_get('webpdrupal7_webp_reconvert_bydate', ''),
+    '#maxlength' => 255,
+    '#description' => t('Empty or Unix timestamp. To converting all created earlier than this moment, paste this -> ').time().'<br />To check date from timestamp, use <a href="http://www.4webhelp.net/us/timestamp.php" target="_blank">this tool</a>',
+  );
+
+
+  // Lazy-Loading
+  $form['webpdrupal7_lazyload'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Lazyload options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // <img> lazy
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_imgprocess'] = array(
+      '#type' => 'select',
+      '#title' => t('Give lazyload to &lt;img&gt;:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_lazy_imgprocess', 0),
+      //'#description' => t(''),
+  );
+
+    // <img> expand range
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_img_expand'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Start loading &lt;img&gt; on range:'),
+    '#default_value' => variable_get('webpdrupal7_lazy_img_expand', 500),
+  );
+
+    // <img> expand range
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_div_expand'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Start loading &lt;div&gt; on range:'),
+    '#default_value' => variable_get('webpdrupal7_lazy_div_expand', 500),
+    '#description' => t('Range for &lt;div&gt; uses as fallback-value if it isnt setted for other tag-types you may want to process (&lt;a&gt;, for example)'),
+  );
+
+    // add chrome lazy attribute to <img>
+  $form['webpdrupal7_lazyload']['webpdrupal7_chromelazy'] = array(
+      '#type' => 'select',
+      '#title' => t('Give chrome "loading" attribute to &lt;img&gt;:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('auto'),
+        2 => t('lazy'),
+        3 => t('eager'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_chromelazy', 0),
+      //'#description' => t(''),
+  );
+
+    // other selectors for lazy-loading
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_additional_selectors'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Process lazyload additionally on this tags/selectors:'),
+    '#default_value' => variable_get('webpdrupal7_lazy_additional_selectors', ''),
+  );
+
+    // ignore lazy
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_dontprocess'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Ignore in Lazyloading-process:'),
+    '#default_value' => variable_get('webpdrupal7_lazy_dontprocess', ''),
+    '#description' => t("This elems will haven't lazy-loading"),
+  );
+
+    // iframe lazy mode - chrome "lazy" or lazysizes
+  $form['webpdrupal7_lazyload']['webpdrupal7_iframe_lazymode'] = array(
+      '#type' => 'select',
+      '#title' => t('Select deferred-method for &lt;iframe&gt;:'),
+      '#options' => array(
+        0 => t('Chrome "loading=lazy"'),
+        1 => t('lazysizes-js'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_iframe_lazymode', 0),
+      //'#description' => t(''),
+  );
+
+    // load lazysizes.js in async manner
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_asyncjs'] = array(
+      '#type' => 'select',
+      '#title' => t('Load lazysizes.js in async/defer manner:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('async'),
+        2 => t('defer'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_lazy_asyncjs', 1),
+      //'#description' => t(''),
+  );
+
+  // CDN
+  $form['webpdrupal7_cdn'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('CDN options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+    // Enable cdn-mode
+  $form['webpdrupal7_cdn']['webpdrupal7_cdn_enabled'] = array(
+      '#type' => 'select',
+      '#title' => t('Enable CDN-support:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_cdn_enabled', 0),
+      //'#description' => t(''),
+  );
+
+    // CDN domain
+  $form['webpdrupal7_cdn']['webpdrupal7_cdn_domain'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CDN domain:'),
+    '#default_value' => variable_get('webpdrupal7_cdn_domain', ''),
+    '#maxlength' => 255,
+    '#description' => t('Empty or full domain, e.g. "https://cdn.'.$_SERVER['SERVER_NAME'].'"'),
+  );
+
+    // Enable for absolute paths
+  $form['webpdrupal7_cdn']['webpdrupal7_cdn_absenabled'] = array(
+      '#type' => 'select',
+      '#title' => t('Process absolute paths:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_cdn_absenabled', 0),
+      '#description' => t('Process absolute paths like "https://'.$_SERVER['SERVER_NAME'].'/images/img.jpg"'),
+  );
+
+
+  // Debug-mode
+  $form['webpdrupal7_debug'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Debug options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // debug in .module
+  $form['webpdrupal7_debug']['webpdrupal7_debug_module'] = array(
+      '#type' => 'select',
+      '#title' => t('Enable module debugmode:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_debug_module', 0),
+      //'#description' => t(''),
+  );
+  $form['webpdrupal7_debug']['webpdrupal7_debug_module_logfilepath'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Where place module logfile:'),
+    '#default_value' => variable_get('webpdrupal7_debug_module_logfilepath', drupal_get_path('module', 'webpdrupal7').'/log_module.txt'),
+    '#maxlength' => 255,
+    //'#description' => t('Empty or comma-separated allowed extensions'),
+  );
+
+    // debug in handler
+  $form['webpdrupal7_debug']['webpdrupal7_debug_outputmodifier'] = array(
+      '#type' => 'select',
+      '#title' => t("Enable outputmodifier's debugmode:"),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_debug_outputmodifier', 0),
+      //'#description' => t(''),
+  );
+  $form['webpdrupal7_debug']['webpdrupal7_debug_outputmodifier_logfilepath'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Where place outputmodifier logfile:'),
+    '#default_value' => variable_get('webpdrupal7_debug_outputmodifier_logfilepath', drupal_get_path('module', 'webpdrupal7').'/log_outputmodifier.txt'),
+    '#maxlength' => 255,
+    //'#description' => t('Empty or comma-separated allowed extensions'),
+  );
+
+  // Path for a output_modifier
+  $form['webpdrupal7_debug']['webpdrupal7_processor_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('output_modifier.php and other libraries stored in:'),
+    '#default_value' => variable_get('webpdrupal7_processor_path', drupal_get_path('module', 'webpdrupal7').'/core_scripts'),
+    '#description' => t('Empty or "sites/all/modules/webpdrupal7/core_scripts"-like path'),
+    '#maxlength' => 255,
+  );
+
+  // experiments
+  $form['webpdrupal7_experimental'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Experimental options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+    // instantpage-prefetcher
+  $form['webpdrupal7_experimental']['instantpage'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('instantpage.js options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // enabled
+  $form['webpdrupal7_experimental']['instantpage']['webpdrupal7_instantpage_enabled'] = array(
+    '#type' => 'select',
+    '#title' => t('Enable:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_instantpage_enabled', 0),
+    '#description' => t('Enable "instantpage.js" - links-prefetcher, preloading &lt;a&gt; by hover. Work good on Chrome-based browsers, but can increase load on your server.'),
+  );
+    // mode
+  $form['webpdrupal7_experimental']['instantpage']['webpdrupal7_instantpage_mode'] = array(
+    '#type' => 'select',
+    '#title' => t('Prefetch-mode:'),
+    '#options' => array(
+      0 => t('Whitelist'),
+      1 => t('Regular'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_instantpage_mode', 0),
+    '#description' => t('Work in "whitelist-mode" (you must specify links-selectors), or normal mode (all &lt;a&gt; except query string). <br /><span style="color: red">Warning!</span> Regular-mode will prefetch all &lt;a&gt;-elements - galleries, fancyboxes, administrative links and other.'),
+  );
+    // whitelist selector
+  $form['webpdrupal7_experimental']['instantpage']['webpdrupal7_instantpage_whitelist']  = array(
+    '#type' => 'textarea',
+    '#title' => t('Whitelist &lt;a&gt; by selectors:'),
+    '#default_value' => variable_get('webpdrupal7_instantpage_whitelist', ''),
+    '#description' => t("Will add 'data-instant'-attribute to this"),
+  );
+
+
+  return system_settings_form($form);
+}
+
+function webpdrupal7_export_form($form, &$form_state) {
+
+  $form['webpdrupal7_export'] = array(
+    '#type' => 'textarea',
+    '#title' => t('JSON-configuration:'),
+    '#default_value' => webpdrupal7_get_exportable_config(),
+    '#rows' => 15,
+  );
+
+  $form['#submit'][] = 'webpdrupal7_export_asfile';
+
+  return system_settings_form($form);
+}
+
+function webpdrupal7_get_transferable_params_list(){
+  $params = array(
+    'webpdrupal7_webp_imgprocess',
+    'webpdrupal7_webp_img_storewebpin',
+    'webpdrupal7_webp_img_byselector',
+    'webpdrupal7_webp_img_extensions',
+    'webpdrupal7_webp_additionaltags',
+    'webpdrupal7_webp_dontprocess',
+    'webpdrupal7_webp_force',
+    'webpdrupal7_webp_force_jshelper',
+    'webpdrupal7_webp_quality',
+    'webpdrupal7_webp_jpeg_quality',
+    'webpdrupal7_webp_jpeg_maxquality',
+    'webpdrupal7_webp_jpeg_defquality',
+    'webpdrupal7_wpc_crypt',
+    'webpdrupal7_wpc_key',
+    'webpdrupal7_wpc_url',
+    'webpdrupal7_webp_try_binaries',
+    'webpdrupal7_webp_precompiled_path',
+    'webpdrupal7_webp_reconvert_bydate',
+    'webpdrupal7_lazy_imgprocess',
+    'webpdrupal7_lazy_img_expand',
+    'webpdrupal7_lazy_div_expand',
+    'webpdrupal7_chromelazy',
+    'webpdrupal7_lazy_additional_selectors',
+    'webpdrupal7_lazy_dontprocess',
+    'webpdrupal7_iframe_lazymode',
+    'webpdrupal7_lazy_asyncjs',
+    'webpdrupal7_cdn_enabled',
+    'webpdrupal7_cdn_domain',
+    'webpdrupal7_cdn_absenabled',
+    'webpdrupal7_debug_module',
+    'webpdrupal7_debug_module_logfilepath',
+    'webpdrupal7_debug_outputmodifier',
+    'webpdrupal7_debug_outputmodifier_logfilepath',
+    'webpdrupal7_processor_path',
+    'webpdrupal7_instantpage_enabled',
+    'webpdrupal7_instantpage_mode',
+    'webpdrupal7_instantpage_whitelist',
+  );
+
+  return $params;
+}
+function webpdrupal7_get_exportable_config(){
+
+  // list of exportable variables names
+  $exportable_params = webpdrupal7_get_transferable_params_list();
+
+  // here will be stored correctly extracted params of list above
+  $collected = array();
+
+  foreach ($exportable_params as $param) {
+    $value = variable_get($param);
+    if ($value !== false){
+      $collected[$param] = $value;
+    }
+  }
+
+  // convert to json
+  $result = json_encode($collected, JSON_PRETTY_PRINT);
+
+  return $result;
+}
+
+function webpdrupal7_export_asfile(){
+
+  $json_config = webpdrupal7_get_exportable_config();
+  $json_filename = date('d-m-Y_H-i-s', time()).'_'.$_SERVER['HTTP_HOST'].'.json';
+
+  if (ob_get_level()) {
+    ob_end_clean();
+  }
+
+  drupal_add_http_header('Content-Type', 'text/plain; charset=utf-8');
+  drupal_add_http_header('Content-Disposition', 'attachment; filename="'.$json_filename.'";');
+  drupal_add_http_header('Content-Length', sprintf('%u', strlen($json_config)));
+
+  print $json_config;
+
+  exit();
+}
+
+/**
+ *  Import
+ */
+function webpdrupal7_import_form($form, &$form_state) {
+
+  $form['webpdrupal7_import'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Import JSON-configuration:'),
+    '#default_value' => '',
+    '#rows' => 15,
+    '#description' => t('<span style="color: red">Warning!</span> This will override all module settings, you cant reset to default!'),
+  );
+  $form['#submit'][] = 'webpdrupal7_import_handler';
+
+  return system_settings_form($form);
+}
+
+function webpdrupal7_import_handler($form, &$form_state) {
+
+  $config = $form_state['values']['webpdrupal7_import'];
+  $params_array = json_decode($config, true);
+
+  if (!is_array($params_array)){
+    return false;
+  }
+
+  // backup active config
+  $active_config = webpdrupal7_get_exportable_config();
+  $backup_dir = DRUPAL_ROOT.'/'.drupal_get_path('module', 'webpdrupal7').'/config_backups/'.$_SERVER['HTTP_HOST'];
+  $backup_filename = date('d-m-Y_H-i-s', time()).'.json';
+
+  // check & create backup directory
+  if (!file_exists($backup_dir)){
+    mkdir($backup_dir, 0755, true);
+  }
+
+  if (file_put_contents($backup_dir.'/'.$backup_filename, $active_config)){ // if backuped, do import
+
+    // list of importable variables names
+    $importable_params = webpdrupal7_get_transferable_params_list();
+
+    // process all variables
+    foreach ($params_array as $param => $value) {
+
+      // check
+      if (in_array($param, $importable_params)){
+        variable_set($param, $value);
+      } else {
+
+      }
+
+      //if ( substr($param, 0, 12) == 'webpdrupal7_'){
+      //}
+    }
+
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
+/**
+ * Implements validation from the Form API.
+ */
+function webpdrupal7_import_form_validate($form, &$form_state){
+
+  $config = $form_state['values']['webpdrupal7_import'];
+  $params_array = json_decode($config, true);
+
+  if (!is_array($params_array)){
+    form_set_error('webpdrupal7_import', t('You must enter json-formatted array of variables!'));
+  }
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+
+function webpdrupal7_form_alter(&$form, &$form_state, $form_id) {
+
+  switch ($form_id){
+    case 'webpdrupal7_export_form':
+      $form['actions']['submit']['#value'] = t('Download');
+      break;
+    case 'webpdrupal7_import_form':
+      $form['actions']['submit']['#value'] = t('Import settings');
+      break;
+  }
+}
+
+
+/**
+ * Implements preprocess_html().
+ */
+
+
+function webpdrupal7_preprocess_html(&$head_elements){
+  if (!path_is_admin(current_path())) {
+    // Получим домашнюю директорию
+    $webpdrupal7_core_path = variable_get('webpdrupal7_processor_path');
+    if ($webpdrupal7_core_path == ''){
+      $webpdrupal7_core_path = 'other-includ/webp';
+    }
+
+    $webpdrupal7_core_path = trim($webpdrupal7_core_path, '/');
+
+    // Проверим поддержку cdn
+  	$cdn = '';
+    $useCDN = false;
+  	if (variable_get('webpdrupal7_cdn_enabled')){
+  		$cdn = variable_get('webpdrupal7_cdn_domain');
+  		$cdn = trim($cdn);
+
+  		if ($cdn != false){
+  			$useCDN = true;
+  		}
+  	}
+
+    // Если включено принудительное добавление webp (для помещения в кэш webp-версий страниц), нужно позаботиться о safari.
+    // Можно в кэш помещать версии без webp, и отдавать webp через nginx/apache, основываясь на UA или cookie.
+    // Но это не будет работать, если мы находимся за CDN, поэтому должен быть такой запасной вариант:
+    // Встраиваем js-хелпер, который будет пробегать по DOM и заменять .webp. Terrible, but working...
+    if (variable_get('webpdrupal7_webp_force') && variable_get('webpdrupal7_webp_force_jshelper')){
+      $unwebp_js = [
+        '#tag' => 'script',
+        '#value' => '',
+        '#attributes' => [
+          'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/unwebp.min.js',
+          'async' => "async",
+        ],
+      ];
+      drupal_add_html_head($unwebp_js, 'unwebp');
+    }
+
+    // Добавим js+css ленивой загрузки
+    if (variable_get('webpdrupal7_lazy_imgprocess') && variable_get('webpdrupal7_lazy_imgprocess') ){
+
+      switch (intval(variable_get('webpdrupal7_lazy_asyncjs'))){
+        case 0:
+          // regular, render-blocking
+
+          // CDN support
+          if ($useCDN){
+            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', 'external');
+            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', 'external');
+          } else {
+            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js');
+            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js');
+          }
+          break;
+
+        case 1:
+          // async
+          $lazysizes_core = [
+            '#tag' => 'script',
+            '#value' => '',
+            '#attributes' => [
+              'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js',
+              'async' => "async",
+            ],
+          ];
+          drupal_add_html_head($lazysizes_core, 'lazysizes_core');
+
+          $lazysizes_unveil = [
+            '#tag' => 'script',
+            '#value' => '',
+            '#attributes' => [
+              'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js',
+              'async' => "async",
+            ],
+          ];
+          drupal_add_html_head($lazysizes_unveil, 'lazysizes_unveil');
+          break;
+
+        case 2:
+          // defer
+
+          // CDN support
+          if ($useCDN){
+            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+          } else {
+            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+          }
+
+          break;
+      }
+
+      // вспомогательный css для переопределения background-image ленивозагружаемого
+      if (variable_get('webpdrupal7_lazy_additional_selectors') != false){
+        /*if ($useCDN){
+          drupal_add_css($cdn.'/'.$webpdrupal7_core_path.'/_staff/css-lazyload-helper.css', 'external');
+        } else {
+          drupal_add_css($webpdrupal7_core_path.'/_staff/css-lazyload-helper.css');
+        }*/
+        drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/css-lazyload-helper.css'), 'inline');
+      }
+    }
+
+    // Вспомогательные js
+    if ($useCDN){
+      drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+      drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+    } else {
+      drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+      drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+    }
+
+    // Внедрение instantpage.js
+    if (variable_get('webpdrupal7_instantpage_enabled') != false){
+
+      // check mode - whitelist (0) or regular (1)
+      if (variable_get('webpdrupal7_instantpage_mode') == false){
+        // include js-helper to add attribute to body
+
+        if ($useCDN){
+          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage-starter-whitelist_mark-body.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+        } else {
+          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage-starter-whitelist_mark-body.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+        }
+      }
+
+      // include core js
+      if ($useCDN){
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+      } else {
+        drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+      }
+    }
+  }
+}
+
+
+/**
+ * Implements process_html().
+ */
+function webpdrupal7_process_html(&$variables) {
+
+  $use_prelog = false;
+
+  $logdata = '';
+	$logfile = $_SERVER['DOCUMENT_ROOT'] . '/sites/all/modules/webpdrupal7/log.txt';
+	date_default_timezone_set( 'Europe/Moscow' );
+	$date = date('d/m/Y H:i:s', time());
+  // Redefining debugmode with module settings.
+  $module_debug = variable_get('webpdrupal7_debug_module');
+  if ($module_debug == 0){
+    $use_prelog = false;
+  } else {
+    $use_prelog = true;
+
+    $module_start = microtime(true); // замер скорости работы
+  }
+
+  $module_debug_path = variable_get('webpdrupal7_debug_module_logfilepath');
+  if ($module_debug_path != ''){
+    $logfile = DRUPAL_ROOT.'/'.trim($module_debug_path, '/');
+  }
+
+    // move processor's core scripts to other directory
+  $processor_core_path = variable_get('webpdrupal7_processor_path');
+  if ($processor_core_path != ''){
+    $processor_core_path = trim($processor_core_path, '/');
+    define('WEBP_CORE_PATH', $processor_core_path);
+  }
+
+
+	if (!path_is_admin(current_path())) {
+
+      if (defined('WEBP_CORE_PATH') && (WEBP_CORE_PATH != '')){
+        $outputmodifier_path = DRUPAL_ROOT.'/'.WEBP_CORE_PATH.'/output_modifier.php';
+      } else {
+        $outputmodifier_path = DRUPAL_ROOT.'/other-includ/webp/output_modifier.php'; // Резервный путь
+      }
+
+      if (!file_exists($outputmodifier_path)){
+        if ($use_prelog){
+          $logdata = 'Невозможно загрузить output_modifier.php, файл отсутствует!'.PHP_EOL;
+          $logdata .= 'Грузили по: ' . $outputmodifier_path;
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+
+          return false;
+        }
+      }
+      include_once $outputmodifier_path;
+
+      if (function_exists('modifyImagesWebp')){
+
+		    $logdata = 'Ф-я существует, стартуем';
+      	if ($use_prelog){
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+
+        $params = array(
+          'webp' => array(
+            'img' => true, // convert to webp
+            'img_webpstore_attr' => 'srcset', // where store webp-version
+            'by_selector' => false, // false or comma-separated css-selectors, e.g. '.img, .img-resp'. Other imgs will be ignored
+            'allowed_extensions' => false, // false or comma-separated extensions without dots
+            'additional_tags' => false, // false or comma-separated css-selectors
+            'ignore_webp_on' => false, // false or comma-separated css-selectors
+            'force' => false, // force pushing webp-version
+          ),
+          'lazyload' => array( // array of tags or selectors
+            'img' => array( // parameters for others is equal, copy and change tagname
+              'lazy' => false, // shortcut and option for quickly disable
+              'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
+              'attr_store_orig' => 'data-srcset', // attr to store original, lazy-loaded img src
+              'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
+              'expand_preload_area' => true, // expand image load area before it displays
+              'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
+              'expand_range' => '500', // default for expanding
+            ),
+            'div' => array(
+              'lazy' => false, // dont process tag globally
+              'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
+              'attr_store_orig' => 'data-bg', // attr to store original, lazy-loaded img src
+              'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
+              'expand_preload_area' => true, // expand image load area before it displays
+              'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
+              'expand_range' => '500' // default for expanding
+            ),
+            'iframe' => array(
+              'lazy' => false, // disabled by default, recommend use lazy+use_chromelazy_instead to prevent disabling analytics iframe
+              'add_chromelazy' => 'lazy', // just add loading="lazy" attr, false / value (auto|lazy|eager)
+              'use_chromelazy_instead' => true, // use loading="lazy" attr instead of js-plugin
+            ),
+            'iframe[src*="youtube"]' => array(
+              'lazy' => false,
+              'use_chromelazy_instead' => false,
+            ),
+            //'.any-selector, .multiple-selector' => array(
+            //  'lazy' => false, // shortcut and option for quickly disable
+            //),
+
+          ),
+          'additional_operations' => array( // additional useful and specific operations for DIDOM.
+            'instantpage' => array(
+              'enabled' => false,
+              'mode' => false, // false for whitelist (its more safe), 'regular' for regular.
+              'whitelist_selectors' => false, // false or string with selectors for prefetching
+            ),
+          ),
+          'cdn' => array( // opt for supporting CDN. Now this is limited to the adding cdn-domain to relative paths
+      			'enabled' => false, // false / true
+      			'domain' => false, // false or domain like "https://cdn.example.ru"
+      			'external' => false, // false/true for abspaths/subdomains
+      			'base_host' => false, // false or base domain like 'example.co.uk'
+    		  ),
+          'ignore_lazy' => false, // selectors for ignoring lazyload. In fact, these elems will be lazied, then unlazied :-/
+          'add_chromelazy_img' => false, // add loading="lazy" attr to img, false or attr value (auto|lazy|eager)
+          'caching' => false, // opt for enabling/disabling caching
+          'debug' => false, // opt for enabling/disabling debug headers
+          'place_log' => false, // path for output_modifier logfile
+        );
+
+        // Redefining options-array with module settings.
+          // img - true/false
+        if (variable_get('webpdrupal7_webp_imgprocess') == 0){
+          $params['webp']['img'] = false;
+        } else {
+          $params['webp']['img'] = true;
+        }
+
+          // img - store webp in
+        $webp_store_in = variable_get('webpdrupal7_webp_img_storewebpin');
+        if ($webp_store_in != ''){
+          $params['webp']['img_webpstore_attr'] = $webp_store_in;
+        }
+
+          // img - by selector
+        $webp_img_byselector = variable_get('webpdrupal7_webp_img_byselector');
+        if ($webp_img_byselector != false){
+          $params['webp']['by_selector'] = str_replace(array("\r","\n"),"",$webp_img_byselector);
+        } else {
+          $params['webp']['by_selector'] = false;
+        }
+
+          // img - filter by extensions
+        $webp_img_extensions = variable_get('webpdrupal7_webp_img_extensions');
+        if ($webp_img_extensions != false){
+          $params['webp']['allowed_extensions'] = $webp_img_extensions;
+        } else {
+          $params['webp']['allowed_extensions'] = false;
+        }
+
+          // process in additional tags
+        $webp_additionaltags = variable_get('webpdrupal7_webp_additionaltags');
+        if ($webp_additionaltags != false){
+          $params['webp']['additional_tags'] = str_replace(array("\r","\n"),"",$webp_additionaltags); // multiline to single
+        } else {
+          $params['webp']['additional_tags'] = false;
+        }
+
+          // ignore webp on
+        $webp_ignore_selectors = variable_get('webpdrupal7_webp_dontprocess');
+        if ($webp_ignore_selectors != false){
+          $params['webp']['ignore_webp_on'] = $webp_ignore_selectors;
+        } else {
+          $params['webp']['ignore_webp_on'] = false;
+        }
+
+        if (variable_get('webpdrupal7_webp_force')){
+          $params['webp']['force'] = true;
+        } else {
+          $params['webp']['force'] = false;
+        }
+
+          // quality
+        $webpdrupal7_webp_quality = variable_get('webpdrupal7_webp_quality');
+        if ($webpdrupal7_webp_quality){
+          if (!defined('WEBP_QUALITY')){
+            define('WEBP_QUALITY', $webpdrupal7_webp_quality);
+          }
+        }
+          // jpeg quality - auto/number
+        $webpdrupal7_webp_jpeg_quality = variable_get('webpdrupal7_webp_jpeg_quality');
+        if ($webpdrupal7_webp_jpeg_quality){
+          if (!defined('WEBP_JPEG_QUALITY')){
+            define('WEBP_JPEG_QUALITY', $webpdrupal7_webp_jpeg_quality);
+          }
+        }
+          // jpeg max quality
+        $webpdrupal7_webp_jpeg_maxquality = variable_get('webpdrupal7_webp_jpeg_maxquality');
+        if ($webpdrupal7_webp_jpeg_maxquality){
+          if (!defined('WEBP_JPEG_MAXQUALITY')){
+            define('WEBP_JPEG_MAXQUALITY', $webpdrupal7_webp_jpeg_maxquality);
+          }
+        }
+          // jpeg default (fallback) quality
+        $webpdrupal7_webp_jpeg_defquality = variable_get('webpdrupal7_webp_jpeg_defquality');
+        if ($webpdrupal7_webp_jpeg_defquality){
+          if (!defined('WEBP_JPEG_DEFQUALITY')){
+            define('WEBP_JPEG_DEFQUALITY', $webpdrupal7_webp_jpeg_defquality);
+          }
+        }
+
+        // wpc
+          // wpc crypt
+        if (variable_get('webpdrupal7_wpc_crypt')){
+          if (!defined('WEBP_WPC_CRYPT')){
+            define('WEBP_WPC_CRYPT', true);
+          }
+        }
+          // wpc key
+        $wpc_key = variable_get('webpdrupal7_wpc_key');
+        if ($wpc_key){
+          if (!defined('WEBP_WPC_KEY')){
+            define('WEBP_WPC_KEY', $wpc_key);
+          }
+        }
+          // wpc url
+        $wpc_url = variable_get('webpdrupal7_wpc_url');
+        if ($wpc_url){
+          if (!defined('WEBP_WPC_URL')){
+            define('WEBP_WPC_URL', $wpc_url);
+          }
+        }
+
+          // precompiled binaries
+        $try_precompiled = variable_get('webpdrupal7_webp_try_binaries');
+        if (!defined('WEBP_TRY_PRECOMPILED')){
+          if ($try_precompiled){
+            define('WEBP_TRY_PRECOMPILED', true);
+          } else {
+            define('WEBP_TRY_PRECOMPILED', false);
+          }
+        }
+          // path for seraching precompiled
+        $webp_precompiled_path = variable_get('webpdrupal7_webp_precompiled_path');
+        if ($webp_precompiled_path != ''){
+          $webp_precompiled_path = DRUPAL_ROOT.'/'.trim($webp_precompiled_path, '/');
+          define('WEBP_PRECOMPILED_PATH', $webp_precompiled_path);
+        }
+
+          // reconverting based on timestamp
+        $reconvert_by_timestamp = variable_get('webpdrupal7_webp_reconvert_bydate');
+        if ($reconvert_by_timestamp && !defined('WEBP_RECONVERT_BYTIMESTAMP')){
+          define('WEBP_RECONVERT_BYTIMESTAMP', $reconvert_by_timestamp);
+        }
+
+
+        // Lazy-Loading
+          // lazy on <img>
+        $lazy_imgprocess = variable_get('webpdrupal7_lazy_imgprocess');
+        if ($lazy_imgprocess != false){
+          $params['lazyload']['img']['lazy'] = true;
+        } else {
+          $params['lazyload']['img']['lazy'] = false;
+        }
+
+          // img lazyloading expand_range
+        $lazy_img_expand = variable_get('webpdrupal7_lazy_img_expand');
+        if ($lazy_imgprocess != false){
+          $params['lazyload']['img']['expand_range'] = $lazy_img_expand;
+        } else {
+          $params['lazyload']['img']['expand_range'] = '500';
+        }
+
+          // add chrome lazy tag
+        $img_chromelazy = variable_get('webpdrupal7_chromelazy');
+        if ($img_chromelazy != false){
+          $params['add_chromelazy_img'] = true;
+
+          $img_chromelazy = intval($img_chromelazy);
+          switch ($img_chromelazy){
+            case 1:
+              $params['add_chromelazy_img'] = 'auto';
+              break;
+            case 2:
+              $params['add_chromelazy_img'] = 'lazy';
+              break;
+            case 3:
+              $params['add_chromelazy_img'] = 'eager';
+              break;
+
+          }
+        } else {
+          $params['add_chromelazy_img'] = false;
+        }
+
+          // add lazyloading to selectors
+        $lazy_additional_selectors = variable_get('webpdrupal7_lazy_additional_selectors');
+        if ($lazy_additional_selectors != false){
+          $lazy_additional_selectors = str_replace(array("\r","\n"),"",$lazy_additional_selectors);
+          // нужно разобрать строку на массив, добавить каждый элемент с параметром lazy
+          // также проверять, если там заявлен div - не добавлять, но включать имеющийся
+            $temporary_sel_arr = explode(',', $lazy_additional_selectors);
+            $temporary_new_selector = '';
+            foreach ($temporary_sel_arr as $value) {
+                $normalized_selector = trim($value);
+                if ($normalized_selector != 'div'){
+                    $temporary_new_selector .= $normalized_selector . ',';
+                } else {
+                    $params['lazyload']['div']['lazy'] = true;
+                }
+            }
+            $temporary_new_selector = rtrim($temporary_new_selector, ',');
+
+            if ($temporary_new_selector != ''){
+              $params['lazyload'][$temporary_new_selector] = array('lazy' => true);
+            }
+            unset($temporary_sel_arr);
+            unset($temporary_new_selector);
+        }
+
+          // div lazyloading expand_range
+        $lazy_div_expand = variable_get('webpdrupal7_lazy_div_expand');
+        if ($lazy_div_expand != false){
+          $params['lazyload']['div']['expand_range'] = $lazy_div_expand;
+        } else {
+          $params['lazyload']['div']['expand_range'] = '500';
+        }
+
+          // remove lazy on selectors
+        $lazy_ignore_selectors = variable_get('webpdrupal7_lazy_dontprocess');
+        if ($lazy_ignore_selectors != false){
+          $params['ignore_lazy'] = str_replace(array("\r","\n"),"",$lazy_ignore_selectors);
+        } else {
+          $params['ignore_lazy'] = false;
+        }
+
+          // iframe-method of deferred loading
+        $lazy_iframe_method = intval(variable_get('webpdrupal7_iframe_lazymode'));
+        if ($lazy_iframe_method == false){
+          $params['lazyload']['iframe']['use_chromelazy_instead'] = true; // false - default, chrome
+        } else {
+          $params['lazyload']['iframe']['use_chromelazy_instead'] = false;
+        }
+
+        // experimental operations
+          // instantpage
+        if (variable_get('webpdrupal7_instantpage_enabled') != false){
+          $params['additional_operations']['instantpage']['enabled'] = true;
+        }
+
+        $instantpage_mode = variable_get('webpdrupal7_instantpage_mode');
+        if ($instantpage_mode != false){
+          $params['additional_operations']['instantpage']['mode'] = 'regular';
+        } else {
+          $params['additional_operations']['instantpage']['mode'] = false;
+        }
+
+        $instantpage_whitelist = variable_get('webpdrupal7_instantpage_whitelist');
+        if ($instantpage_whitelist != false){
+          $params['additional_operations']['instantpage']['whitelist_selectors'] = str_replace(array("\r","\n"),"",$instantpage_whitelist);
+        } else {
+          $params['additional_operations']['instantpage']['whitelist_selectors'] = false;
+        }
+
+        // CDN
+        if (variable_get('webpdrupal7_cdn_enabled') != false){
+        	$cdn = variable_get('webpdrupal7_cdn_domain');
+    			$cdn = trim($cdn);
+
+    			if ($cdn != false){
+    				$params['cdn']['enabled'] = true;
+    				$params['cdn']['domain'] = $cdn;
+    			}
+
+    			if (variable_get('webpdrupal7_cdn_absenabled')){
+    				// обрабатывать абсолютные пути
+    				$params['cdn']['external'] = true;
+    			}
+        }
+
+          // debug-mode
+        $outputmodifier_debug = variable_get('webpdrupal7_debug_outputmodifier');
+        if ($outputmodifier_debug == 0){
+          $params['debug'] = false;
+        } else {
+          $params['debug'] = true;
+        }
+
+        $outputmodifier_debug_path = variable_get('webpdrupal7_debug_outputmodifier_logfilepath');
+        if ($outputmodifier_debug_path != ''){
+          $logpath = DRUPAL_ROOT.'/'.trim($outputmodifier_debug_path, '/');
+          $params['place_log'] = $logpath;
+          define('WEBP_OUTPUTMODIFIER_LOGPATH', $logpath);
+        }
+
+        // ****** //
+
+
+        if ($use_prelog){
+          $logdata = 'Отправляем на обработку...';
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+
+          $logdata = 'Параметры: '.PHP_EOL;
+          $logdata = print_r($params, true);
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+
+        $modified_output = modifyImagesWebp($variables['page'], $params);
+        // also can call $modified_output = modifyImagesWebp($variables['page']) for launch with default prameters
+
+        if ($use_prelog){
+          $logdata = 'Обработали, двигаемся дальше';
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+
+        $variables['page'] = $modified_output;
+
+        if ($use_prelog){
+          $logdata = 'Присвоили';
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+
+        if ($use_prelog){
+          $logdata = $modified_output;
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+
+        if ($use_prelog){
+          $logdata = 'Работали '. (microtime(true) - $module_start) . ' сек.';
+          file_put_contents($logfile, $date.': '.$logdata.PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+
+      }
+    }
+}
+
