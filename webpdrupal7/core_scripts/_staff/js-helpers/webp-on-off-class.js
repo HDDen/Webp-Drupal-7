@@ -12,6 +12,8 @@
 
 	testWebP(function(support) {
 	    var t=document.getElementsByTagName("html")[0];
-	    support?t.classList.add("webp-on"):t.classList.add("webp-off");
+	    if (!(t.classList.contains('webp-on')) && !(t.classList.contains('webp-off'))){
+			support?t.classList.add("webp-on"):t.classList.add("webp-off");
+	    }
 	});
 })();

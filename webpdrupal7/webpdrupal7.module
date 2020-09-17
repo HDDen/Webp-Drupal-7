@@ -371,6 +371,21 @@ function webpdrupal7_form($form, &$form_state) {
       //'#description' => t(''),
   );
 
+  // load manner of webp-detect.js
+  $form['webpdrupal7_lazyload']['webpdrupal7_webpdetect_asyncjs'] = array(
+      '#type' => 'select',
+      '#title' => t('Load js for webp-detect in async/defer manner:'),
+      '#options' => array(
+        0 => t('Header, inline'),
+        1 => t('Header, external, blocking'),
+        2 => t('Header, async'),
+        3 => t('Footer, defer'),
+        4 => t('Skip loading')
+      ),
+      '#default_value' => variable_get('webpdrupal7_webpdetect_asyncjs', 2),
+      //'#description' => t(''),
+  );
+
   // CDN
   $form['webpdrupal7_cdn'] = array(
     '#type' => 'fieldset',
@@ -512,6 +527,18 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t("Will add 'data-instant'-attribute to this"),
   );
 
+  // <img> async decoding
+  $form['webpdrupal7_experimental']['webpdrupal7_asyncimg'] = array(
+    '#type' => 'select',
+    '#title' => t('Decode images asynchronously:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_asyncimg', 0),
+    '#description' => t('Add "decoding=async" to all imgs'),
+  );
+
 
   return system_settings_form($form);
 }
@@ -558,6 +585,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_lazy_dontprocess',
     'webpdrupal7_iframe_lazymode',
     'webpdrupal7_lazy_asyncjs',
+    'webpdrupal7_webpdetect_asyncjs',
     'webpdrupal7_cdn_enabled',
     'webpdrupal7_cdn_domain',
     'webpdrupal7_cdn_absenabled',
@@ -569,6 +597,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_instantpage_enabled',
     'webpdrupal7_instantpage_mode',
     'webpdrupal7_instantpage_whitelist',
+    'webpdrupal7_asyncimg',
   );
 
   return $params;
@@ -732,6 +761,57 @@ function webpdrupal7_preprocess_html(&$head_elements){
   		}
   	}
 
+    // Вспомогательный js определения поддержки webp в браузере (полезно для фоновых изображений)
+    switch (intval(variable_get('webpdrupal7_webpdetect_asyncjs'))){
+      case 0:
+        // Header, inline
+        drupal_add_js(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js'), array(
+          'type' => 'inline',
+          'scope' => 'header',
+          'weight' => 1,
+        ));
+        break;
+      case 1:
+        // Header, external, blocking
+        // CDN support
+        if ($useCDN){
+          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('scope' => 'header', 'type' => 'external'));
+        } else {
+          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('scope' => 'header'));
+        }
+        break;
+
+      case 2:
+        // Header, async
+        // async
+        $webp_detect_js = [
+          '#tag' => 'script',
+          '#value' => '',
+          '#attributes' => [
+            'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js',
+            'async' => "async",
+          ],
+        ];
+        drupal_add_html_head($webp_detect_js, 'webp_detect_js');
+
+        break;
+
+      case 3:
+        // Footer, defer
+
+        // CDN support
+        if ($useCDN){
+          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+        } else {
+          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+        }
+        break;
+
+      case 4:
+        // Skip loading
+        break;
+    }
+
     // Если включено принудительное добавление webp (для помещения в кэш webp-версий страниц), нужно позаботиться о safari.
     // Можно в кэш помещать версии без webp, и отдавать webp через nginx/apache, основываясь на UA или cookie.
     // Но это не будет работать, если мы находимся за CDN, поэтому должен быть такой запасной вариант:
@@ -816,10 +896,10 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
     // Вспомогательные js
     if ($useCDN){
-      drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+      //drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
       drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
     } else {
-      drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+      //drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
       drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
     }
 
@@ -969,6 +1049,7 @@ function webpdrupal7_process_html(&$variables) {
           'caching' => false, // opt for enabling/disabling caching
           'debug' => false, // opt for enabling/disabling debug headers
           'place_log' => false, // path for output_modifier logfile
+          'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
         );
 
         // Redefining options-array with module settings.
@@ -1146,7 +1227,7 @@ function webpdrupal7_process_html(&$variables) {
             $temporary_new_selector = '';
             foreach ($temporary_sel_arr as $value) {
                 $normalized_selector = trim($value);
-                if ($normalized_selector != 'div'){
+                if ($normalized_selector !== 'div'){
                     $temporary_new_selector .= $normalized_selector . ',';
                 } else {
                     $params['lazyload']['div']['lazy'] = true;
@@ -1203,6 +1284,11 @@ function webpdrupal7_process_html(&$variables) {
           $params['additional_operations']['instantpage']['whitelist_selectors'] = str_replace(array("\r","\n"),"",$instantpage_whitelist);
         } else {
           $params['additional_operations']['instantpage']['whitelist_selectors'] = false;
+        }
+
+        // add decoding="async" to <img>-tags
+        if (variable_get('webpdrupal7_asyncimg') != false){
+          $params['asyncimg'] = true;
         }
 
         // CDN

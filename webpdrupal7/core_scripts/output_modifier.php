@@ -186,6 +186,7 @@ function mix_params($params = false){
 		'caching' => false, // opt for enabling/disabling caching
 		'debug' => false, // opt for enabling/disabling debug headers
 		'place_log' => false, // path for output_modifier logfile
+		'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
 	);
 
 	if ($params){
@@ -363,6 +364,11 @@ function process_webp($document, &$params = false){
 				// но и делать отдельный проход по DOM только ради этого не стоит
 				if ($params['add_chromelazy_img'] !== false){
 					$elem->setAttribute('loading', $params['add_chromelazy_img']);
+				}
+
+				// подключаем атрибут decoding="async"
+				if ($params['asyncimg']){
+					$elem->setAttribute('decoding', 'async');
 				}
 			} else {
 				// если не img, то только в style, задав background-image

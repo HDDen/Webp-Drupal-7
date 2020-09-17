@@ -1,1 +1,151 @@
 <?php
+
+// фиксим отсутствующий name у input
+$inputs = $document->find('input');
+if (count($inputs) > 0){
+	foreach ($inputs as $input) {
+		// если атрибут пуст или отсутствует
+		if ( ($input->hasAttribute('name') && ($input->getAttribute('name') == '')) || !($input->hasAttribute('name')) ){
+			if ($input->hasAttribute('id')){
+				$newname = $input->getAttribute('id');
+				$input->setAttribute('name', $newname);
+			}
+		}
+
+		// и удаляем x-autocompletetype
+		if ($input->hasAttribute('x-autocompletetype')){
+			$input->removeAttribute('x-autocompletetype');
+		}
+	}
+}
+unset($inputs);
+
+// фиксим label for
+$labels = $document->find('label');
+if (count($labels)){
+	foreach ($labels as $label) {
+		if ($label->hasAttribute('for')){
+			$id = $label->getAttribute('for');
+			$elem = $document->first('#'.$id);
+			if (!is_null($elem) && ($elem->tag == 'div')){
+				$label->removeAttribute('for');
+			}
+		}
+	}
+}
+unset($labels);
+
+// фиксим дублирование id блока телефона
+$phoneblock = $document->find('#block-block-1');
+if (count($phoneblock > 1)){
+	unset($phoneblock[0]);
+	foreach ($phoneblock as $bl_index => $block) {
+		$block->setAttribute('id', 'block-block-1-'.$bl_index);
+	}
+}
+unset($phoneblock);
+
+// удалим устаревшие атрибуты из table, заменив их на класс
+$tables = $document->find('table');
+if (count($tables)){
+	foreach ($tables as $table) {
+		$addClass = false;
+		if ($table->hasAttribute('border')){$table->removeAttribute('border'); $addClass = true;}
+		if ($table->hasAttribute('cellpadding')){$table->removeAttribute('cellpadding'); $addClass = true;}
+
+		// add class
+		if ($addClass){
+			$tableClass='';
+			if ($table->hasAttribute('class')){
+				$tableClass = $table->getAttribute('class').' ';
+			}
+			$table->setAttribute('class', $tableClass.'inlineTable');
+		}
+	}
+}
+unset($tables);
+
+// внешние и некоторые внутренние ссылки в nofollow
+$nofollow_links = array(
+	'a[href="/o-nas/"]',
+	'a[href="/programma-lecheniya-i-reabilitacii/"]',
+	'a[href="/reabilitacionnyy-centr/"]',
+	'a[href="/rasporyadok-dnya/"]',
+	'a[href="/vopros-otvet/"]',
+	'a[href="/news/"]',
+	'a[href="/soglashenie-ob-obrabotke-i-ispolzovanii-personalnyh-dannyh/"]',
+	'a[href*="https://www.youtube.com"]',
+	'a[href*="https://youtu.be"]',
+);
+foreach ($nofollow_links as $value) {
+	$link = $document->find($value);
+	if (count($link)){
+		foreach ($link as $target) {
+			$target->setAttribute('rel', 'nofollow');
+		}
+	}
+}
+unset($nofollow_links);
+
+// Добавляем микроразметку
+use DiDom\Element;
+
+$schema_domain = 'https://'.$_SERVER['HTTP_HOST'];
+$schema_pageurl = 'https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+$schema_sitename = 'Центр «Нарко-Инфо»';
+$schema_logotype = 'https://'.$_SERVER['HTTP_HOST'].'/sites/all/themes/flumb/logo-600.jpg';
+
+$schema_pagename = $document->find('h1');
+if (count($schema_pagename)){
+	$schema_tempor = trim($schema_pagename[0]->text());
+	$schema_pagename = $schema_tempor;
+} else {
+	$schema_pagename = $schema_sitename;
+}
+
+$schema_code = '{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "WebPage",
+            "@id": "'.$schema_pageurl.'",
+            "name": "'.$schema_pagename.'",
+            "description": "",
+            "author": {
+                "@type": "Organization",
+                "@id": "'.$schema_domain.'",
+                "name": "'.$schema_sitename.'",
+                "url": "'.$schema_domain.'",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "'.$schema_logotype.'",
+                    "width": "600",
+                    "height": "316"
+                }
+            },
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Главная",
+                        "item": "'.$schema_domain.'"
+                    }
+                ]
+            },
+            "url": "'.$schema_pageurl.'",
+            "inLanguage": "ru_RU"
+        },
+        {
+            "@type": "WebSite",
+            "@id": "'.$schema_domain.'",
+            "name": "'.$schema_sitename.'",
+            "url": "'.$schema_domain.'",
+            "inLanguage": "ru_RU"
+        }
+    ]
+}';
+
+$schema_element = new Element('script', $schema_code, array('type' => 'application/ld+json')); // создание элемента
+$document->first('div')->appendChild($schema_element);
