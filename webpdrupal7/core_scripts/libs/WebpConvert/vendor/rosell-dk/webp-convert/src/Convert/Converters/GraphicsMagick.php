@@ -46,13 +46,13 @@ class GraphicsMagick extends AbstractConverter
 
     public function isInstalled()
     {
-        exec($this->getPath() . ' -version', $output, $returnCode);
+        exec($this->getPath() . ' -version 2>&1', $output, $returnCode);
         return ($returnCode == 0);
     }
 
     public function getVersion()
     {
-        exec($this->getPath() . ' -version', $output, $returnCode);
+        exec($this->getPath() . ' -version 2>&1', $output, $returnCode);
         if (($returnCode == 0) && isset($output[0])) {
             return preg_replace('#http.*#', '', $output[0]);
         }
@@ -62,7 +62,7 @@ class GraphicsMagick extends AbstractConverter
     // Check if webp delegate is installed
     public function isWebPDelegateInstalled()
     {
-        exec($this->getPath() . ' -version', $output, $returnCode);
+        exec($this->getPath() . ' -version 2>&1', $output, $returnCode);
         foreach ($output as $line) {
             if (preg_match('#WebP.*yes#i', $line)) {
                 return true;
@@ -97,9 +97,17 @@ class GraphicsMagick extends AbstractConverter
     {
         $commandArguments = [];
 
-        // Unlike imagick binary, it seems gmagick binary uses a fixed
-        // quality (75) when quality is omitted
+        /*
+        if ($this->isQualityDetectionRequiredButFailing()) {
+            // Unlike imagick binary, it seems gmagick binary uses a fixed
+            // quality (75) when quality is omitted
+            // So we cannot simply omit in order to get same quality as source.
+            // But perhaps there is another way?
+            // Check out #91 - it is perhaps as easy as this: "-define jpeg:preserve-settings"
+        }
+        */
         $commandArguments[] = '-quality ' . escapeshellarg($this->getCalculatedQuality());
+
 
         // encoding
         if ($this->options['encoding'] == 'lossless') {
@@ -142,7 +150,7 @@ class GraphicsMagick extends AbstractConverter
 
         $this->logLn('Version: ' . $this->getVersion());
 
-        $command = $this->getPath() . ' convert ' . $this->createCommandLineOptions();
+        $command = $this->getPath() . ' convert ' . $this->createCommandLineOptions() . ' 2>&1';
 
         $useNice = (($this->options['use-nice']) && self::hasNiceSupport()) ? true : false;
         if ($useNice) {

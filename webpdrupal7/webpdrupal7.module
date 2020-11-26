@@ -309,7 +309,7 @@ function webpdrupal7_form($form, &$form_state) {
     '#default_value' => variable_get('webpdrupal7_lazy_img_expand', 500),
   );
 
-    // <img> expand range
+    // <div> expand range
   $form['webpdrupal7_lazyload']['webpdrupal7_lazy_div_expand'] = array(
     '#type' => 'textfield',
     '#title' => t('Start loading &lt;div&gt; on range:'),
@@ -358,10 +358,29 @@ function webpdrupal7_form($form, &$form_state) {
       //'#description' => t(''),
   );
 
+    // lazySizes or Lozad
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_use_lozad'] = array(
+      '#type' => 'select',
+      '#title' => t('Which js-lib must be used:'),
+      '#options' => array(
+        0 => t('LazySizes'),
+        1 => t('Lozad'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_lazy_use_lozad', 0),
+      //'#description' => t(''),
+  );
+
+    // store bg-attr in custom attr
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_bgattr'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Store orig bg-src in custom data-attribute:'),
+    '#default_value' => variable_get('webpdrupal7_lazy_bgattr', 'data-bg'),
+  );
+
     // load lazysizes.js in async manner
   $form['webpdrupal7_lazyload']['webpdrupal7_lazy_asyncjs'] = array(
       '#type' => 'select',
-      '#title' => t('Load lazysizes.js in async/defer manner:'),
+      '#title' => t('Load js lib in async/defer manner:'),
       '#options' => array(
         0 => t('No'),
         1 => t('async'),
@@ -539,6 +558,21 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t('Add "decoding=async" to all imgs'),
   );
 
+  // <img> height/width attr
+  $form['webpdrupal7_experimental']['webpdrupal7_setsizes'] = array(
+    '#type' => 'select',
+    '#title' => t('Add width/height to all imgs:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Width+Height'),
+      2 => t('Width only'),
+      3 => t('Height only'),
+      4 => t('Allowlist'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_setsizes', 0),
+    '#description' => t('Add width/height attributes to all imgs'),
+  );
+
 
   return system_settings_form($form);
 }
@@ -584,6 +618,8 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_lazy_additional_selectors',
     'webpdrupal7_lazy_dontprocess',
     'webpdrupal7_iframe_lazymode',
+    'webpdrupal7_lazy_use_lozad',
+    'webpdrupal7_lazy_bgattr',
     'webpdrupal7_lazy_asyncjs',
     'webpdrupal7_webpdetect_asyncjs',
     'webpdrupal7_cdn_enabled',
@@ -598,6 +634,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_instantpage_mode',
     'webpdrupal7_instantpage_whitelist',
     'webpdrupal7_asyncimg',
+    'webpdrupal7_setsizes',
   );
 
   return $params;
@@ -831,41 +868,64 @@ function webpdrupal7_preprocess_html(&$head_elements){
     // Добавим js+css ленивой загрузки
     if (variable_get('webpdrupal7_lazy_imgprocess') && variable_get('webpdrupal7_lazy_imgprocess') ){
 
+      $useLozad = intval(variable_get('webpdrupal7_lazy_use_lozad'));
+
       switch (intval(variable_get('webpdrupal7_lazy_asyncjs'))){
         case 0:
           // regular, render-blocking
 
           // CDN support
           if ($useCDN){
-            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', 'external');
-            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', 'external');
+            if ($useLozad){
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js', 'external');
+            } else {
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', 'external');
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', 'external');
+            }
           } else {
-            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js');
-            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js');
+            if ($useLozad){
+              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js');
+            } else {
+              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js');
+              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js');
+            }
           }
           break;
 
         case 1:
           // async
-          $lazysizes_core = [
-            '#tag' => 'script',
-            '#value' => '',
-            '#attributes' => [
-              'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js',
-              'async' => "async",
-            ],
-          ];
-          drupal_add_html_head($lazysizes_core, 'lazysizes_core');
+          if ($useLozad){
+            $lozad = [
+              '#tag' => 'script',
+              '#value' => '',
+              '#attributes' => [
+                'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js',
+                'async' => "async",
+              ],
+            ];
+            drupal_add_html_head($lozad, 'lozad');
+          } else {
+            $lazysizes_core = [
+              '#tag' => 'script',
+              '#value' => '',
+              '#attributes' => [
+                'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js',
+                'async' => "async",
+              ],
+            ];
+            drupal_add_html_head($lazysizes_core, 'lazysizes_core');
 
-          $lazysizes_unveil = [
-            '#tag' => 'script',
-            '#value' => '',
-            '#attributes' => [
-              'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js',
-              'async' => "async",
-            ],
-          ];
-          drupal_add_html_head($lazysizes_unveil, 'lazysizes_unveil');
+            $lazysizes_unveil = [
+              '#tag' => 'script',
+              '#value' => '',
+              '#attributes' => [
+                'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js',
+                'async' => "async",
+              ],
+            ];
+            drupal_add_html_head($lazysizes_unveil, 'lazysizes_unveil');
+          }
+
           break;
 
         case 2:
@@ -873,11 +933,19 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
           // CDN support
           if ($useCDN){
-            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
-            drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+            if ($useLozad){
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+            } else {
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+            }
           } else {
-            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
-            drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+            if ($useLozad){
+              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+            } else {
+              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+            }
           }
 
           break;
@@ -1050,6 +1118,7 @@ function webpdrupal7_process_html(&$variables) {
           'debug' => false, // opt for enabling/disabling debug headers
           'place_log' => false, // path for output_modifier logfile
           'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
+          'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>
         );
 
         // Redefining options-array with module settings.
@@ -1250,6 +1319,10 @@ function webpdrupal7_process_html(&$variables) {
           $params['lazyload']['div']['expand_range'] = '500';
         }
 
+          //webpdrupal7_lazy_bgattr
+        $lazy_bg_attr = variable_get('webpdrupal7_lazy_bgattr');
+        $params['lazyload']['div']['attr_store_orig'] = $lazy_bg_attr;
+
           // remove lazy on selectors
         $lazy_ignore_selectors = variable_get('webpdrupal7_lazy_dontprocess');
         if ($lazy_ignore_selectors != false){
@@ -1289,6 +1362,12 @@ function webpdrupal7_process_html(&$variables) {
         // add decoding="async" to <img>-tags
         if (variable_get('webpdrupal7_asyncimg') != false){
           $params['asyncimg'] = true;
+        }
+
+        // add width/height to <img>-tags
+        $images_setsize_mode = variable_get('webpdrupal7_setsizes');
+        if ($images_setsize_mode != false){
+          $params['img_setsize'] = $images_setsize_mode;
         }
 
         // CDN

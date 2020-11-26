@@ -97,10 +97,15 @@ webp-on-demand-proxy.php : можно настроить использован�
   #RewriteRule ^\/?(.*)\.(jpe?g|png)$ /$1.$2.webp [NC,T=image/webp,L]
 
   # Redirect images to webp-on-demand.php (if browser supports webp)
+  #RewriteCond %{HTTP_COOKIE} ^.*deb=true.*$ [NC]
   #RewriteCond %{HTTP_HOST} ^(.*)\.site\.ru$ [NC] # для конкретного сайта / поддомена
   RewriteCond %{HTTP_REFERER} !admin [NC]
+  #RewriteCond %{REQUEST_URI} !^/admin(.*)$ [NC]
+  #RewriteCond %{REQUEST_URI} !^admin(.*)$ [NC]
   RewriteCond %{REQUEST_URI} \.(jpg|jpeg|png)$ [NC]
   RewriteCond %{REQUEST_FILENAME} -f
-  RewriteCond %{HTTP_COOKIE} ^.*webpactive=true.*$ [OR,NC]
-  RewriteCond %{HTTP_ACCEPT} image/webp [NC]
+  RewriteCond %{HTTP_COOKIE} ^.*webpactive=true.*$ [NC,OR]
+  RewriteCond %{HTTP_ACCEPT} image/webp [NC,OR]
+  RewriteCond %{HTTP_USER_AGENT} Chrome [OR]
+  RewriteCond %{HTTP_USER_AGENT} "Google Page Speed Insights"
   RewriteRule ^(.*)\.(jpe?g|png)$ /other-includ/webp/webp-on-demand-proxy.php [NC,L]

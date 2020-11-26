@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "imangazaliev/didom",
-            "version": "1.15",
+            "version": "1.16.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Imangazaliev/DiDOM.git",
-                "reference": "ed1677e14d740e91d67c4d115f2068d17fce8b86"
+                "reference": "c88f5a562868d92b86d0b6aa8dfb30aa7f99977f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Imangazaliev/DiDOM/zipball/ed1677e14d740e91d67c4d115f2068d17fce8b86",
-                "reference": "ed1677e14d740e91d67c4d115f2068d17fce8b86",
+                "url": "https://api.github.com/repos/Imangazaliev/DiDOM/zipball/c88f5a562868d92b86d0b6aa8dfb30aa7f99977f",
+                "reference": "c88f5a562868d92b86d0b6aa8dfb30aa7f99977f",
                 "shasum": ""
             },
             "require": {
@@ -52,7 +52,7 @@
                 "parser",
                 "xml"
             ],
-            "time": "2020-01-21T10:57:19+00:00"
+            "time": "2020-11-16T10:57:57+00:00"
         }
     ],
     "packages-dev": [],

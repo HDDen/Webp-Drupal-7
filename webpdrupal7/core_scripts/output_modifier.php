@@ -126,6 +126,70 @@ function add_debugheader($header = false, $value = false){
 	header('X-outputmodifier-'.$header.': '.$value);
 }
 
+function add_img_sizes(&$elem, $mode){
+	if (WEBP_DEBUGMODE){
+		writeLog('add_img_sizes(): Зашли в функцию');
+	}
+
+	if (!$mode){
+		if (WEBP_DEBUGMODE){
+			writeLog('add_img_sizes(): Не передан режим, ничего не делаем');
+		}
+		return false;
+	}
+
+	// проверяем, установлены ли атрибуты, чтобы не перевычислять
+	if ( !is_null($elem->getAttribute('width')) || !is_null($elem->getAttribute('height')) ){
+		if (WEBP_DEBUGMODE){
+			writeLog('add_img_sizes(): Изображению уже назначены атрибуты width или height');
+		}
+		return true;
+	}
+
+	$src = $elem->getAttribute('src');
+	if (is_null($src)){
+		if (WEBP_DEBUGMODE){
+			writeLog('add_img_sizes(): src не обнаружен, выход.');
+		}
+
+		return false;
+	}
+
+	$img_server_abspath = parsePathFromSrc($src);
+
+	// получаем данные об изображении
+	$sizes = false;
+	if ($img_server_abspath){
+		$sizes = getimagesize($img_server_abspath);
+	} else {
+		if (WEBP_DEBUGMODE){
+			writeLog('add_img_sizes(): Не смогли получить серверный путь до картинки.'.PHP_EOL.'$src = '.$src.PHP_EOL.' Выход.');
+		}
+
+		return false;
+	}
+
+	// 0 => t('No'),
+    // 1 => t('Width+Height'),
+    // 2 => t('Width only'),
+    // 3 => t('Height only'),
+    // 4 => t('Allowlist'), <- не реализовано, todo !
+    if ($sizes && ($sizes[0] > 0) && ($sizes[1] > 0) ){
+    	switch ($mode){
+			case 1:
+				$elem->setAttribute('width', $sizes[0]);
+				$elem->setAttribute('height', $sizes[1]);
+				break;
+			case 2:
+				$elem->setAttribute('width', $sizes[0]);
+				break;
+			case 3:
+				$elem->setAttribute('height', $sizes[1]);
+				break;
+		}
+    }
+}
+
 // Смешиваем полученные параметры с дефолтными
 function mix_params($params = false){
 
@@ -187,6 +251,7 @@ function mix_params($params = false){
 		'debug' => false, // opt for enabling/disabling debug headers
 		'place_log' => false, // path for output_modifier logfile
 		'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
+		'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>
 	);
 
 	if ($params){
@@ -370,6 +435,12 @@ function process_webp($document, &$params = false){
 				if ($params['asyncimg']){
 					$elem->setAttribute('decoding', 'async');
 				}
+
+				// добавление ширины/высоты
+				// просто берём src, и узнаём о нём информацию
+				if ($params['img_setsize']){
+					add_img_sizes($elem, $params['img_setsize']);
+				}
 			} else {
 				// если не img, то только в style, задав background-image
 				// заменим через str_replace в инлайновом стиле
@@ -487,6 +558,17 @@ function process_lazyload_once($elem, &$params){
 		// добавляем нативную loading = "lazy"
 		if ($params['add_chromelazy_img'] !== false){
 			$elem->setAttribute('loading', $params['add_chromelazy_img']);
+		}
+
+		// подключаем атрибут decoding="async"
+		if ($params['asyncimg']){
+			$elem->setAttribute('decoding', 'async');
+		}
+
+		// добавление ширины/высоты
+		// просто берём src, и узнаём о нём информацию
+		if ($params['img_setsize']){
+			add_img_sizes($elem, $params['img_setsize']);
 		}
 
 	} else {
@@ -816,12 +898,22 @@ function check_extension_allowed_to_convert($src, $allowed_extensions = false){
 	}
 }
 
-function parsePathFromSrc($image_orig_uri, $home_dir){
+function parsePathFromSrc($image_orig_uri, $home_dir = false){
 //получает серверный путь картинки из URI
 
 	if (WEBP_DEBUGMODE){
 		writeLog('  parsePathFromSrc(): стартовали');
 		writeLog('      $image_orig_uri = '.$image_orig_uri);
+	}
+
+	if (!$home_dir){
+		if (WEBP_DEBUGMODE){
+			writeLog('      $home_dir не передан, вычисляем');
+		}
+		$home_dir = get_homedir();
+	}
+
+	if (WEBP_DEBUGMODE){
 		writeLog('      $home_dir = '.$home_dir);
 	}
 
@@ -833,6 +925,14 @@ function parsePathFromSrc($image_orig_uri, $home_dir){
 			writeLog('      Внешний url, без нашего домена. Отказ.');
 		}
 
+		return false;
+	}
+
+	// также нужно проверить, чтобы это был не data:image...
+	if ( mb_substr($image_orig_uri, 0, 5) == 'data:'){
+		if (WEBP_DEBUGMODE){
+			writeLog('      data-url. Отказ.');
+		}
 		return false;
 	}
 

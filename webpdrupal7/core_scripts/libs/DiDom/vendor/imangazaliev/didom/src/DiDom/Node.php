@@ -33,13 +33,13 @@ abstract class Node
      *
      * @return Element|Element[]
      *
-     * @throws LogicException if current node has no owner document
-     * @throws InvalidArgumentException if the provided argument is not an instance of DOMNode or Element
+     * @throws LogicException if the current node has no owner document
+     * @throws InvalidArgumentException if one of elements of parameter 1 is not an instance of DOMNode or Element
      */
     public function prependChild($nodes)
     {
         if ($this->node->ownerDocument === null) {
-            throw new LogicException('Can not prepend child to element without owner document');
+            throw new LogicException('Can not prepend a child to element without the owner document');
         }
 
         $returnArray = true;
@@ -72,13 +72,13 @@ abstract class Node
      *
      * @return Element|Element[]
      *
-     * @throws LogicException if current node has no owner document
+     * @throws LogicException if the current node has no owner document
      * @throws InvalidArgumentException if the provided argument is not an instance of DOMNode or Element
      */
     public function appendChild($nodes)
     {
         if ($this->node->ownerDocument === null) {
-            throw new LogicException('Can not append child to element without owner document');
+            throw new LogicException('Can not append a child to element without the owner document');
         }
 
         $returnArray = true;
@@ -125,14 +125,14 @@ abstract class Node
      *
      * @return Element
      *
-     * @throws LogicException if current node has no owner document
+     * @throws LogicException if the current node has no owner document
      * @throws InvalidArgumentException if $node is not an instance of DOMNode or Element
      * @throws InvalidArgumentException if $referenceNode is not an instance of DOMNode or Element
      */
     public function insertBefore($node, $referenceNode = null)
     {
         if ($this->node->ownerDocument === null) {
-            throw new LogicException('Can not insert child to element without owner document');
+            throw new LogicException('Can not insert a child to an element without the owner document');
         }
 
         if ($node instanceof Node) {
@@ -173,7 +173,7 @@ abstract class Node
      *
      * @return Element
      *
-     * @throws LogicException if current node has no owner document
+     * @throws LogicException if the current node has no owner document
      * @throws InvalidArgumentException if $node is not an instance of DOMNode or Element
      * @throws InvalidArgumentException if $referenceNode is not an instance of DOMNode or Element
      */
@@ -195,6 +195,78 @@ abstract class Node
     }
 
     /**
+     * Adds a new sibling before a reference node.
+     *
+     * @param Node|DOMNode $node The new node
+     *
+     * @return Element
+     *
+     * @throws LogicException if the current node has no owner document
+     * @throws InvalidArgumentException if $node is not an instance of DOMNode or Element
+     * @throws InvalidArgumentException if $referenceNode is not an instance of DOMNode or Element
+     */
+    public function insertSiblingBefore($node)
+    {
+        if ($this->node->ownerDocument === null) {
+            throw new LogicException('Can not insert a child to an element without the owner document');
+        }
+
+        if ($this->parent() === null) {
+            throw new LogicException('Can not insert a child to an element without the parent element');
+        }
+
+        if ($node instanceof Node) {
+            $node = $node->getNode();
+        }
+
+        if ( ! $node instanceof DOMNode) {
+            throw new InvalidArgumentException(sprintf('Argument 1 passed to %s must be an instance of %s or DOMNode, %s given', __METHOD__, __CLASS__, (is_object($node) ? get_class($node) : gettype($node))));
+        }
+
+        Errors::disable();
+
+        $clonedNode = $node->cloneNode(true);
+        $newNode = $this->node->ownerDocument->importNode($clonedNode, true);
+
+        $insertedNode = $this->parent()->getNode()->insertBefore($newNode, $this->node);
+
+        Errors::restore();
+
+        return new Element($insertedNode);
+    }
+
+    /**
+     * Adds a new sibling after a reference node.
+     *
+     * @param Node|DOMNode $node The new node
+     *
+     * @return Element
+     *
+     * @throws LogicException if the current node has no owner document
+     * @throws InvalidArgumentException if $node is not an instance of DOMNode or Element
+     * @throws InvalidArgumentException if $referenceNode is not an instance of DOMNode or Element
+     */
+    public function insertSiblingAfter($node)
+    {
+        if ($this->node->ownerDocument === null) {
+            throw new LogicException('Can not insert a child to an element without the owner document');
+        }
+
+        if ($this->parent() === null) {
+            throw new LogicException('Can not insert a child to an element without the parent element');
+        }
+
+        $nextSibling = $this->nextSibling();
+
+        // if the current node is the last child
+        if ($nextSibling === null) {
+            return $this->parent()->appendChild($node);
+        }
+
+        return $nextSibling->insertSiblingBefore($node);
+    }
+
+    /**
      * Checks the existence of the node.
      *
      * @param string $expression XPath expression or CSS selector
@@ -210,9 +282,9 @@ abstract class Node
     /**
      * Searches for an node in the DOM tree for a given XPath expression or a CSS selector.
      *
-     * @param string $expression  XPath expression or a CSS selector
-     * @param string $type        The type of the expression
-     * @param bool   $wrapElement Returns array of Element if true, otherwise array of DOMElement
+     * @param string $expression XPath expression or a CSS selector
+     * @param string $type The type of the expression
+     * @param bool $wrapElement Returns array of Element if true, otherwise array of DOMElement
      *
      * @return Element[]|DOMElement[]
      *
@@ -227,12 +299,12 @@ abstract class Node
      * Searches for an node in the owner document using current node as context.
      *
      * @param string $expression XPath expression or a CSS selector
-     * @param string $type       The type of the expression
-     * @param bool   $wrapNode   Returns array of Element if true, otherwise array of DOMElement
+     * @param string $type The type of the expression
+     * @param bool $wrapNode Returns array of Element if true, otherwise array of DOMElement
      *
      * @return Element[]|DOMElement[]
      *
-     * @throws LogicException if current node has no owner document
+     * @throws LogicException if the current node has no owner document
      * @throws InvalidSelectorException
      */
     public function findInDocument($expression, $type = Query::TYPE_CSS, $wrapNode = true)
@@ -240,7 +312,7 @@ abstract class Node
         $ownerDocument = $this->getDocument();
 
         if ($ownerDocument === null) {
-            throw new LogicException('Can not search in context without owner document');
+            throw new LogicException('Can not search in context without the owner document');
         }
 
         return $ownerDocument->find($expression, $type, $wrapNode, $this->node);
@@ -250,8 +322,8 @@ abstract class Node
      * Searches for an node in the DOM tree and returns first element or null.
      *
      * @param string $expression XPath expression or a CSS selector
-     * @param string $type       The type of the expression
-     * @param bool   $wrapNode   Returns Element if true, otherwise DOMElement
+     * @param string $type The type of the expression
+     * @param bool $wrapNode Returns Element if true, otherwise DOMElement
      *
      * @return Element|DOMElement|null
      *
@@ -266,8 +338,8 @@ abstract class Node
      * Searches for an node in the owner document using current node as context and returns first element or null.
      *
      * @param string $expression XPath expression or a CSS selector
-     * @param string $type       The type of the expression
-     * @param bool   $wrapNode   Returns Element if true, otherwise DOMElement
+     * @param string $type The type of the expression
+     * @param bool $wrapNode Returns Element if true, otherwise DOMElement
      *
      * @return Element|DOMElement|null
      *
@@ -278,7 +350,7 @@ abstract class Node
         $ownerDocument = $this->getDocument();
 
         if ($ownerDocument === null) {
-            throw new LogicException('Can not search in context without owner document');
+            throw new LogicException('Can not search in context without the owner document');
         }
 
         return $ownerDocument->first($expression, $type, $wrapNode, $this->node);
@@ -288,7 +360,7 @@ abstract class Node
      * Searches for an node in the DOM tree for a given XPath expression.
      *
      * @param string $expression XPath expression
-     * @param bool   $wrapNode Returns array of Element if true, otherwise array of DOMElement
+     * @param bool $wrapNode Returns array of Element if true, otherwise array of DOMElement
      *
      * @return Element[]|DOMElement[]
      *
@@ -442,7 +514,7 @@ abstract class Node
      *
      * @return static
      *
-     * @throws InvalidArgumentException if value is not string
+     * @throws InvalidArgumentException if parameter 1 is not a string
      */
     public function setValue($value)
     {
@@ -460,7 +532,7 @@ abstract class Node
     }
 
     /**
-     * Returns true if current node is a DOMElement instance.
+     * Returns true if the current node is a DOMElement instance.
      *
      * @return bool
      */
@@ -470,7 +542,7 @@ abstract class Node
     }
 
     /**
-     * Returns true if current node is a a DOMText instance.
+     * Returns true if the current node is a a DOMText instance.
      *
      * @return bool
      */
@@ -480,7 +552,7 @@ abstract class Node
     }
 
     /**
-     * Returns true if current node is a DOMComment instance.
+     * Returns true if the current node is a DOMComment instance.
      *
      * @return bool
      */
@@ -490,7 +562,7 @@ abstract class Node
     }
 
     /**
-     * Returns true if current node is a DOMCdataSection instance.
+     * Returns true if the current node is a DOMCdataSection instance.
      *
      * @return bool
      */
@@ -506,7 +578,7 @@ abstract class Node
      *
      * @return bool
      *
-     * @throws InvalidArgumentException if the provided argument is not an instance of DOMNode
+     * @throws InvalidArgumentException if parameter 1 is not an instance of DOMNode
      */
     public function is($node)
     {
@@ -574,7 +646,7 @@ abstract class Node
      *
      * @return Element|null
      *
-     * @throws InvalidArgumentException if the node type is not string
+     * @throws InvalidArgumentException if parameter 2 is not a string
      * @throws RuntimeException if the node type is invalid
      * @throws LogicException if the selector used with non DOMElement node type
      * @throws InvalidSelectorException if the selector is invalid
@@ -638,7 +710,7 @@ abstract class Node
      *
      * @return Element[]
      *
-     * @throws InvalidArgumentException if the node type is not string
+     * @throws InvalidArgumentException if parameter 2 is not a string
      * @throws RuntimeException if the node type is invalid
      * @throws LogicException if the selector used with non DOMElement node type
      * @throws InvalidSelectorException if the selector is invalid
@@ -714,7 +786,7 @@ abstract class Node
      *
      * @return Element|null
      *
-     * @throws InvalidArgumentException if the node type is not string
+     * @throws InvalidArgumentException if parameter 2 is not a string
      * @throws RuntimeException if the node type is invalid
      * @throws LogicException if the selector used with non DOMElement node type
      * @throws InvalidSelectorException if the selector is invalid
@@ -778,7 +850,7 @@ abstract class Node
      *
      * @return Element[]
      *
-     * @throws InvalidArgumentException if the node type is not string
+     * @throws InvalidArgumentException if parameter 2 is not a string
      * @throws RuntimeException if the node type is invalid
      * @throws LogicException if the selector used with non DOMElement node type
      * @throws InvalidSelectorException if the selector is invalid
@@ -959,12 +1031,12 @@ abstract class Node
      *
      * @return Element the node that has been removed
      *
-     * @throws LogicException if current node has no parent node
+     * @throws LogicException if the current node has no parent node
      */
     public function remove()
     {
         if ($this->node->parentNode === null) {
-            throw new LogicException('Can not remove element without parent node');
+            throw new LogicException('Can not remove an element without the parent node');
         }
 
         $removedNode = $this->node->parentNode->removeChild($this->node);
@@ -980,12 +1052,12 @@ abstract class Node
      *
      * @return Element The node that has been replaced
      *
-     * @throws LogicException if current node has no parent node
+     * @throws LogicException if the current node has no parent node
      */
     public function replace($newNode, $clone = true)
     {
         if ($this->node->parentNode === null) {
-            throw new LogicException('Can not replace element without parent node');
+            throw new LogicException('Can not replace an element without the parent node');
         }
 
         if ($newNode instanceof Node) {
@@ -1105,8 +1177,8 @@ abstract class Node
      * Searches for an node in the DOM tree for a given XPath expression or a CSS selector.
      *
      * @param string $expression XPath expression or a CSS selector
-     * @param string $type       The type of the expression
-     * @param bool   $wrapNode   Returns array of Element if true, otherwise array of DOMElement
+     * @param string $type The type of the expression
+     * @param bool $wrapNode Returns array of Element if true, otherwise array of DOMElement
      *
      * @return Element[]|DOMElement[]
      *
