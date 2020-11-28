@@ -593,6 +593,17 @@ function process_lazyload_once($elem, &$params){
 				// затираем изначальный src
 				$elem->removeAttribute('src');
 			}
+		} else {
+			// нет атрибута src - возможно, video?
+			if ($tagname == 'video') {
+				// для видео нужно обработать постер и src
+				// пока работаем с постером
+				$video_poster_src = $elem->getAttribute('poster');
+				if (!is_null($video_poster_src)){
+					$elem->setAttribute('poster', '');
+					$elem->setAttribute('data-poster', $video_poster_src);
+				}
+			}
 		}
 
 
