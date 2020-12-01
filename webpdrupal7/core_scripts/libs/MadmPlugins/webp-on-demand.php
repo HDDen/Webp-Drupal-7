@@ -1,10 +1,12 @@
 <?php
 
+require('../../_settings.php'); // настройки по-умолчанию
+
 if ( (defined('HOMEDIR') || function_exists('get_homedir') )
     && defined('WEBPPROJECT') && defined('WEBPCONVERT')){
     $webpconvert_autoload_path = get_homedir() . '/' . WEBPPROJECT . '/' . WEBPCONVERT . '/vendor/autoload.php';
 } else {
-    $webpconvert_autoload_path = $_SERVER["DOCUMENT_ROOT"] . '/other-includ/webp/libs/WebpConvert/vendor/autoload.php';
+    $webpconvert_autoload_path = $_SERVER["DOCUMENT_ROOT"] . '/'.trim($webp_core_fallback_location, '/').'/libs/WebpConvert/vendor/autoload.php';
 }
 
 if (!file_exists($webpconvert_autoload_path)){
