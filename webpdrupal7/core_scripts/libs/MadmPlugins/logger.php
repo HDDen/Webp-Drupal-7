@@ -9,11 +9,13 @@ writeLog($logdata, true); - true если начинаем писать лог �
 if (!function_exists('writeLog')){
     function writeLog($logdata = '', $newstarted = false){
 
+        require('../../_settings.php'); // настройки по-умолчанию
+
         // logfile path
         if (defined('WEBP_OUTPUTMODIFIER_LOGPATH') && (WEBP_OUTPUTMODIFIER_LOGPATH != '')){
             $logfile = WEBP_OUTPUTMODIFIER_LOGPATH;
         } else {
-            $logfile = $_SERVER['DOCUMENT_ROOT'].'/other-includ/webp/log.txt';
+            $logfile = $_SERVER['DOCUMENT_ROOT'].'/'.trim($webp_core_fallback_location, '/').'/log.txt';
         }
 
         date_default_timezone_set( 'Europe/Moscow' );

@@ -574,6 +574,19 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t('Add width/height attributes to all imgs'),
   );
 
+  // <img> fallback alt
+  $form['webpdrupal7_experimental']['webpdrupal7_fallback_alt'] = array(
+    '#type' => 'select',
+    '#title' => t('Add alt-tag to img:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_fallback_alt', 1),
+    '#description' => t('Add alt="" to all imgs without'),
+  );
+
+
 
   return system_settings_form($form);
 }
@@ -636,6 +649,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_instantpage_whitelist',
     'webpdrupal7_asyncimg',
     'webpdrupal7_setsizes',
+    'webpdrupal7_fallback_alt'
   );
 
   return $params;
@@ -782,7 +796,8 @@ function webpdrupal7_preprocess_html(&$head_elements){
     // Получим домашнюю директорию
     $webpdrupal7_core_path = variable_get('webpdrupal7_processor_path');
     if ($webpdrupal7_core_path == ''){
-      $webpdrupal7_core_path = 'other-includ/webp';
+      require('core_scripts/_settings.php'); // настройки по-умолчанию
+      $webpdrupal7_core_path = trim($webp_core_fallback_location, '/');
     }
 
     $webpdrupal7_core_path = trim($webpdrupal7_core_path, '/');
@@ -1011,6 +1026,8 @@ function webpdrupal7_preprocess_html(&$head_elements){
  */
 function webpdrupal7_process_html(&$variables) {
 
+  require('core_scripts/_settings.php'); // настройки по-умолчанию
+
   $use_prelog = false;
 
   $logdata = '';
@@ -1045,7 +1062,7 @@ function webpdrupal7_process_html(&$variables) {
       if (defined('WEBP_CORE_PATH') && (WEBP_CORE_PATH != '')){
         $outputmodifier_path = DRUPAL_ROOT.'/'.WEBP_CORE_PATH.'/output_modifier.php';
       } else {
-        $outputmodifier_path = DRUPAL_ROOT.'/other-includ/webp/output_modifier.php'; // Резервный путь
+        $outputmodifier_path = DRUPAL_ROOT.'/'.trim($webp_core_fallback_location, '/').'/output_modifier.php'; // Резервный путь
       }
 
       if (!file_exists($outputmodifier_path)){
@@ -1129,7 +1146,8 @@ function webpdrupal7_process_html(&$variables) {
           'debug' => false, // opt for enabling/disabling debug headers
           'place_log' => false, // path for output_modifier logfile
           'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
-          'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>
+          'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>,
+          'fallback_alt' => true, // add empty 'alt'-attribute if doesnt exists
         );
 
         // Redefining options-array with module settings.
@@ -1385,6 +1403,9 @@ function webpdrupal7_process_html(&$variables) {
         if ($images_setsize_mode != false){
           $params['img_setsize'] = $images_setsize_mode;
         }
+
+        // add alt="async" to <img>-tags
+        $params['fallback_alt'] = variable_get('webpdrupal7_fallback_alt');
 
         // CDN
         if (variable_get('webpdrupal7_cdn_enabled') != false){

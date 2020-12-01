@@ -1,5 +1,7 @@
 <?php
 
+require('_settings.php'); // настройки по-умолчанию
+
 define('HOMEDIR', ''); // домашняя папка сайта ( /var/site.com ). Еслу пусто, проверяем DUPAL_ROOT, или
 
 if (function_exists('variable_get')){
@@ -7,7 +9,7 @@ if (function_exists('variable_get')){
 	$webpproject_path = trim($webpproject_path, '');
 }
 if ($webpproject_path == ''){
-	$webpproject_path = 'other-includ/webp';
+	$webpproject_path = trim($webp_core_fallback_location, '/');
 }
 define('WEBPPROJECT', $webpproject_path); // папка проекта, от домашней папки сайта
 
@@ -19,7 +21,8 @@ define('MADMPLUGINS', 'libs/MadmPlugins'); // папка с прокси-пла�
 
 function THEME_process_html(&$variables) {
 	if (!path_is_admin(current_path())) {
-		include_once $_SERVER['DOCUMENT_ROOT'] . '/other-includ/webp/output_modifier.php';
+		require('_settings.php'); // настройки по-умолчанию
+		include_once $_SERVER['DOCUMENT_ROOT'] . '/'.trim($webp_core_fallback_location, '/').'/output_modifier.php';
 		if (function_exists('modifyImagesWebp')){
 
 			$params = array(); // Настройки для селектора ('a.image') берутся из настроек его тега ('a'), а если для этого тега они не заданы, беру из настроек тега 'div' (можно их не определять, подтянутся дефолтные)
@@ -190,6 +193,13 @@ function add_img_sizes(&$elem, $mode){
     }
 }
 
+function add_fallback_alt(&$elem, &$params){
+	$old_alt = $elem->getAttribute('alt');
+	if (is_null($old_alt)){
+		$elem->setAttribute('alt', '');
+	}
+}
+
 // Смешиваем полученные параметры с дефолтными
 function mix_params($params = false){
 
@@ -253,6 +263,7 @@ function mix_params($params = false){
 		'place_log' => false, // path for output_modifier logfile
 		'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
 		'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>
+		'fallback_alt' => true, // add empty 'alt'-attribute if doesnt exists
 	);
 
 	if ($params){
@@ -442,6 +453,11 @@ function process_webp($document, &$params = false){
 				if ($params['img_setsize']){
 					add_img_sizes($elem, $params['img_setsize']);
 				}
+
+				// Добавление пустого alt, если отсутствует
+				if ($params['fallback_alt']){
+					add_fallback_alt($elem, $params);	
+				}
 			} else {
 				// если не img, то только в style, задав background-image
 				// заменим через str_replace в инлайновом стиле
@@ -550,6 +566,11 @@ function process_lazyload_once($elem, &$params){
 		// просто берём src, и узнаём о нём информацию
 		if ($params['img_setsize']){
 			add_img_sizes($elem, $params['img_setsize']);
+		}
+
+		// Добавление пустого alt, если отсутствует
+		if ($params['fallback_alt']){
+			add_fallback_alt($elem, $params);	
 		}
 
 		if ($params['lazyload']['img']['use_native']){

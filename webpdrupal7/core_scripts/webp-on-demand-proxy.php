@@ -28,12 +28,14 @@ $relativeSrcPath = urldecode($requestUriNoQS);
 $source = $docRoot . $relativeSrcPath;           // Absolute file path to source file. Comes from the .htaccess
 $destination = $source . '.webp';     // Store the converted images besides the original images (other options are available!)
 
+require('_settings.php'); // настройки по-умолчанию
+
 $useNginx = false; // если есть nginx, то не устанавливаем headers и не используем readfile();
 
 if (defined('WEBP_CORE_PATH') && (WEBP_CORE_PATH != '')){
 	$webp_ondemand_path = DRUPAL_ROOT.'/'.WEBP_CORE_PATH.'/libs/MadmPlugins/webp-on-demand.php';
 } else {
-	$webp_ondemand_path = $docRoot . '/other-includ/webp/libs/MadmPlugins/webp-on-demand.php';
+	$webp_ondemand_path = $docRoot . '/'.trim($webp_core_fallback_location, '/').'/libs/MadmPlugins/webp-on-demand.php';
 	if (!file_exists($webp_ondemand_path)){
 		$webp_ondemand_path = $docRoot . '/sites/all/modules/webpdrupal7/core_scripts/libs/MadmPlugins/webp-on-demand.php';
 	}
