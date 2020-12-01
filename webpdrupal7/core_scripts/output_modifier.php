@@ -212,6 +212,7 @@ function mix_params($params = false){
 				'expand_preload_area' => true, // expand image load area before it displays
 				'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
 				'expand_range' => '500', // default for expanding
+				'use_native' => false, // false/true. Use only loading="lazy"
 			),
 			'div' => array(
 				'lazy' => false, // dont process tag globally
@@ -530,6 +531,31 @@ function process_lazyload_once($elem, &$params){
 		// если img, нам нужно создать srcset, в него запихнуть инлайн-картинку, а в data-srcset засунуть оригинальный src.
 		// но если есть webp-версия, то в data-src пихаем её
 
+		// добавляем нативную loading = "lazy"
+		// upd. Если мы используем только нативную реализацию lazyloading, то нужно только прописать атрибут
+		if ( ($params['add_chromelazy_img'] !== false) || $params['lazyload']['img']['use_native']){
+			$native_lazy_mode = $params['add_chromelazy_img'];
+			if (!$native_lazy_mode){
+				$native_lazy_mode = 'lazy'; // переопределение на случай, если не выбран режим для loading-атрибута
+			}
+			$elem->setAttribute('loading', $native_lazy_mode);
+		}
+
+		// подключаем атрибут decoding="async"
+		if ($params['asyncimg']){
+			$elem->setAttribute('decoding', 'async');
+		}
+
+		// добавление ширины/высоты
+		// просто берём src, и узнаём о нём информацию
+		if ($params['img_setsize']){
+			add_img_sizes($elem, $params['img_setsize']);
+		}
+
+		if ($params['lazyload']['img']['use_native']){
+			return true; // выход
+		}
+
 		// также нам нужно проверить, вдруг это изображение содержит корректные атрибуты srcset, которые используются по назначению.
 		// также удалить srcset, если там inline-изображение
 		$srcset_attr_value = $elem->getAttribute('srcset');
@@ -554,23 +580,6 @@ function process_lazyload_once($elem, &$params){
 		$elem->setAttribute('data-srcset', $srcset_attr_value);
 
 		$elem->setAttribute('srcset', $preloader);
-
-		// добавляем нативную loading = "lazy"
-		if ($params['add_chromelazy_img'] !== false){
-			$elem->setAttribute('loading', $params['add_chromelazy_img']);
-		}
-
-		// подключаем атрибут decoding="async"
-		if ($params['asyncimg']){
-			$elem->setAttribute('decoding', 'async');
-		}
-
-		// добавление ширины/высоты
-		// просто берём src, и узнаём о нём информацию
-		if ($params['img_setsize']){
-			add_img_sizes($elem, $params['img_setsize']);
-		}
-
 	} else {
 		$is_src_contains = $elem->getAttribute('src');
 		if (!is_null($is_src_contains)){

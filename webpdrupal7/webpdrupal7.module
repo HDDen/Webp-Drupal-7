@@ -297,6 +297,7 @@ function webpdrupal7_form($form, &$form_state) {
       '#options' => array(
         0 => t('No'),
         1 => t('Yes'),
+        2 => t('Only loading="lazy"'),
       ),
       '#default_value' => variable_get('webpdrupal7_lazy_imgprocess', 0),
       //'#description' => t(''),
@@ -866,7 +867,16 @@ function webpdrupal7_preprocess_html(&$head_elements){
     }
 
     // Добавим js+css ленивой загрузки
-    if (variable_get('webpdrupal7_lazy_imgprocess') && variable_get('webpdrupal7_lazy_imgprocess') ){
+    // проверка, нужны ли вообще js-библиотеки?
+    $lazy_process_img = variable_get('webpdrupal7_lazy_imgprocess');
+    $lazy_lib_needed = false;
+    $lazy_additional_elems = variable_get('webpdrupal7_lazy_additional_selectors');
+
+    if ( ($lazy_process_img == 1) || $lazy_additional_elems ){
+      $lazy_lib_needed = true;
+    }
+
+    if ($lazy_process_img && $lazy_lib_needed ){
 
       $useLozad = intval(variable_get('webpdrupal7_lazy_use_lozad'));
 
@@ -952,7 +962,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
       }
 
       // вспомогательный css для переопределения background-image ленивозагружаемого
-      if (variable_get('webpdrupal7_lazy_additional_selectors') != false){
+      if ($lazy_additional_elems != false){
         /*if ($useCDN){
           drupal_add_css($cdn.'/'.$webpdrupal7_core_path.'/_staff/css-lazyload-helper.css', 'external');
         } else {
@@ -1075,6 +1085,7 @@ function webpdrupal7_process_html(&$variables) {
               'expand_preload_area' => true, // expand image load area before it displays
               'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
               'expand_range' => '500', // default for expanding
+              'use_native' => false, // false/true. Use only loading="lazy"
             ),
             'div' => array(
               'lazy' => false, // dont process tag globally
@@ -1250,10 +1261,15 @@ function webpdrupal7_process_html(&$variables) {
         // Lazy-Loading
           // lazy on <img>
         $lazy_imgprocess = variable_get('webpdrupal7_lazy_imgprocess');
+        $params['lazyload']['img']['lazy'] = $lazy_imgprocess;
         if ($lazy_imgprocess != false){
           $params['lazyload']['img']['lazy'] = true;
         } else {
           $params['lazyload']['img']['lazy'] = false;
+        }
+        // addition to enable only native lazy-loading on <imgs>
+        if ($lazy_imgprocess == 2){
+          $params['lazyload']['img']['use_native'] = true;
         }
 
           // img lazyloading expand_range
