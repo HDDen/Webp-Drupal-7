@@ -90,6 +90,7 @@ webp-on-demand-proxy.php : можно настроить использован�
 Также можно конвертировать изображение без прибегания к парсеру, напрямую через апач (пример взят из документации к webpconvert):
 
 # Redirect to existing converted image (under appropriate circumstances)
+  #RewriteCond %{HTTP_COOKIE} !^.*webpactive=false.*$ [NC]
   #RewriteCond %{HTTP_REFERER} !admin [NC]
   #RewriteCond %{HTTP_ACCEPT} image/webp [OR]
   #RewriteCond %{HTTP_COOKIE} ^.*webpactive=true.*$ [NC]
@@ -99,6 +100,7 @@ webp-on-demand-proxy.php : можно настроить использован�
   # Redirect images to webp-on-demand.php (if browser supports webp)
   #RewriteCond %{HTTP_COOKIE} ^.*deb=true.*$ [NC]
   #RewriteCond %{HTTP_HOST} ^(.*)\.site\.ru$ [NC] # для конкретного сайта / поддомена
+  RewriteCond %{HTTP_COOKIE} !^.*webpactive=false.*$ [NC]
   RewriteCond %{HTTP_REFERER} !admin [NC]
   #RewriteCond %{REQUEST_URI} !^/admin(.*)$ [NC]
   #RewriteCond %{REQUEST_URI} !^admin(.*)$ [NC]
