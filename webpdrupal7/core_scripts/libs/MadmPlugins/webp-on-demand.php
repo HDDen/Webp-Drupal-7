@@ -1,6 +1,6 @@
 <?php
 
-require('../../_settings.php'); // настройки по-умолчанию
+require(dirname(__FILE__).'/../../_settings.php'); // настройки по-умолчанию
 
 if ( (defined('HOMEDIR') || function_exists('get_homedir') )
     && defined('WEBPPROJECT') && defined('WEBPCONVERT')){

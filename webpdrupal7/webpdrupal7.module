@@ -376,6 +376,7 @@ function webpdrupal7_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Store orig bg-src in custom data-attribute:'),
     '#default_value' => variable_get('webpdrupal7_lazy_bgattr', 'data-bg'),
+    '#description' => t('"data-bg" for LazySizes, "data-background-image" for Lozad'),
   );
 
     // load lazysizes.js in async manner

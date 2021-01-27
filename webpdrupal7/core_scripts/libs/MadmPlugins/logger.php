@@ -9,7 +9,7 @@ writeLog($logdata, true); - true если начинаем писать лог �
 if (!function_exists('writeLog')){
     function writeLog($logdata = '', $newstarted = false){
 
-        require('../../_settings.php'); // настройки по-умолчанию
+        require(dirname(__FILE__).'/../../_settings.php'); // настройки по-умолчанию
 
         // logfile path
         if (defined('WEBP_OUTPUTMODIFIER_LOGPATH') && (WEBP_OUTPUTMODIFIER_LOGPATH != '')){
