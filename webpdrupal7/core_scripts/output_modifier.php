@@ -977,6 +977,9 @@ function parsePathFromSrc($image_orig_uri, $home_dir = false){
 		return false;
 	}
 
+	// Теперь надо отбросить get-параметры
+	$image_orig_uri = strtok($image_orig_uri, '?');
+
 	if ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443){
 		$protocol = 'https';
 	} else {

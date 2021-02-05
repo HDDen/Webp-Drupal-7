@@ -94,6 +94,16 @@ function convertWebpDem($source = false, $destination = false, $reconvert = fals
         }
     }
 
+    // проверка на тип файла - пропускаем только jpeg и png. Должна проверяться даже если стоит флаг trusted
+    $src_mimetype = mime_content_type(strtok($source, '?'));
+    if ( ($src_mimetype != 'image/jpeg') && ($src_mimetype != 'image/png') ){
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('  convertWebpDem(): Тип изображения не пригоден для конвертирования. '.PHP_EOL.'  $source = '.$source.PHP_EOL.'  $src_mimetype = '.$src_mimetype);
+            }
+        }
+    }
+
     if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
         if (function_exists('writeLog')){
             writeLog('  convertWebpDem(): Начинаем конвертирование');

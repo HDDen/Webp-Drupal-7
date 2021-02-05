@@ -575,6 +575,18 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t('Add width/height attributes to all imgs'),
   );
 
+  // <img> height/width attr
+  $form['webpdrupal7_experimental']['webpdrupal7_setsizes_csshelper'] = array(
+    '#type' => 'select',
+    '#title' => t('Add inline css-styles for overriding as style="height: auto":'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_setsizes_csshelper', 0),
+    '#description' => t('Rules are in webpdrupal7/core_scripts/_staff/img-width-height-helper.css'),
+  );
+
   // <img> fallback alt
   $form['webpdrupal7_experimental']['webpdrupal7_fallback_alt'] = array(
     '#type' => 'select',
@@ -650,6 +662,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_instantpage_whitelist',
     'webpdrupal7_asyncimg',
     'webpdrupal7_setsizes',
+    'webpdrupal7_setsizes_csshelper',
     'webpdrupal7_fallback_alt'
   );
 
@@ -888,6 +901,9 @@ function webpdrupal7_preprocess_html(&$head_elements){
     $lazy_lib_needed = false;
     $lazy_additional_elems = variable_get('webpdrupal7_lazy_additional_selectors');
 
+    // css-helper to images_setsize
+    $images_setsize_csshelper = variable_get('webpdrupal7_setsizes_csshelper');
+
     if ( ($lazy_process_img == 1) || $lazy_additional_elems ){
       $lazy_lib_needed = true;
     }
@@ -985,6 +1001,11 @@ function webpdrupal7_preprocess_html(&$head_elements){
           drupal_add_css($webpdrupal7_core_path.'/_staff/css-lazyload-helper.css');
         }*/
         drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/css-lazyload-helper.css'), 'inline');
+      }
+
+      // Вспомогательный css для исправления вытягивании img по высоте при добавлении атрибутов width/height
+      if ($images_setsize_csshelper){
+        drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/img-width-height-helper.css'), 'inline');
       }
     }
 
