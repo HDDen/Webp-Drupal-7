@@ -160,6 +160,15 @@ function add_img_sizes(&$elem, $mode){
 
 	$img_server_abspath = parsePathFromSrc($src);
 
+	// Проверка существования
+	if (!file_exists($img_server_abspath)){
+		if (WEBP_DEBUGMODE){
+			writeLog('add_img_sizes(): Картинки по пути '.$img_server_abspath.' не существует. Выход.');
+		}
+
+		return false;
+	}
+
 	// получаем данные об изображении
 	$sizes = false;
 	if ($img_server_abspath){
