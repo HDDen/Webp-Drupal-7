@@ -102,6 +102,8 @@ function convertWebpDem($source = false, $destination = false, $reconvert = fals
                 writeLog('  convertWebpDem(): Тип изображения не пригоден для конвертирования. '.PHP_EOL.'  $source = '.$source.PHP_EOL.'  $src_mimetype = '.$src_mimetype);
             }
         }
+
+        return false;
     }
 
     if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
