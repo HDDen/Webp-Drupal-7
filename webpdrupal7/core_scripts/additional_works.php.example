@@ -52,6 +52,7 @@ if (count($tables)){
 		$addClass = false;
 		if ($table->hasAttribute('border')){$table->removeAttribute('border'); $addClass = true;}
 		if ($table->hasAttribute('cellpadding')){$table->removeAttribute('cellpadding'); $addClass = true;}
+		if ($table->hasAttribute('cellspacing')){$table->removeAttribute('cellspacing'); $addClass = true;}
 
 		// add class
 		if ($addClass){
@@ -87,14 +88,37 @@ foreach ($nofollow_links as $value) {
 }
 unset($nofollow_links);
 
-// Добавляем микроразметку
+// добавляем класс к первому слайду первого экрана
+if ($_SERVER['REQUEST_URI'] == '/'){
+    $active_slide = $document->first('#block-views-slider-main .item-list li:first-child');
+    if ($active_slide){
+        $existing_class = $active_slide->getAttribute('class');
+        if ($existing_class){
+            $existing_class .= ' active';
+        } else {
+            $existing_class = 'active';
+        }
+        $active_slide->setAttribute('class', $existing_class);
+    }
+}
+
+/**
+ * Добавляем микроразметку
+ */
+
 use DiDom\Element;
 
-$schema_domain = 'https://'.$_SERVER['HTTP_HOST'];
-$schema_pageurl = 'https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-$schema_sitename = 'Центр «Нарко-Инфо»';
-$schema_logotype = 'https://'.$_SERVER['HTTP_HOST'].'/sites/all/themes/flumb/logo-600.jpg';
+$schema_domain = 'https://'.trim($_SERVER['HTTP_HOST'], '/');
+$schema_sitename = 'Стоматология Максима Шубных';
+$schema_trail = ''; // '' или '/'. Добавлять ли закрывающий слэш к url
 
+$schema_allResultEntities = array(); // будет содержать каждый добавленный элемент Схемы
+
+// Секция для разметки WebPage
+$schema_pageurl = $schema_domain.$_SERVER['REQUEST_URI'];
+$schema_logotype = $schema_domain.'/sites/all/themes/flumb/logo.png'; // any size, but recommends 600 * 316
+$schema_logotype_width = '182';
+$schema_logotype_height = '92';
 $schema_pagename = $document->find('h1');
 if (count($schema_pagename)){
 	$schema_tempor = trim($schema_pagename[0]->text());
@@ -102,50 +126,148 @@ if (count($schema_pagename)){
 } else {
 	$schema_pagename = $schema_sitename;
 }
-
-$schema_code = '{
-    "@context": "https://schema.org",
-    "@graph": [
-        {
-            "@type": "WebPage",
-            "@id": "'.$schema_pageurl.'",
-            "name": "'.$schema_pagename.'",
-            "description": "",
-            "author": {
-                "@type": "Organization",
-                "@id": "'.$schema_domain.'",
-                "name": "'.$schema_sitename.'",
-                "url": "'.$schema_domain.'",
-                "logo": {
-                    "@type": "ImageObject",
-                    "url": "'.$schema_logotype.'",
-                    "width": "600",
-                    "height": "316"
-                }
-            },
-            "breadcrumb": {
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    {
-                        "@type": "ListItem",
-                        "position": 1,
-                        "name": "Главная",
-                        "item": "'.$schema_domain.'"
-                    }
-                ]
-            },
-            "url": "'.$schema_pageurl.'",
-            "inLanguage": "ru_RU"
-        },
-        {
-            "@type": "WebSite",
-            "@id": "'.$schema_domain.'",
-            "name": "'.$schema_sitename.'",
-            "url": "'.$schema_domain.'",
-            "inLanguage": "ru_RU"
-        }
-    ]
+// Разметка WebPage
+$schema_allResultEntities[] = '{
+	"@type": "WebPage",
+	"@id": "'.$schema_pageurl.'",
+	"name": "'.$schema_pagename.'",
+	"description": "",
+	"author": {
+		"@type": "Organization",
+		"@id": "'.$schema_domain.'",
+		"name": "'.$schema_sitename.'",
+		"url": "'.$schema_domain.'",
+		"logo": {
+			"@type": "ImageObject",
+			"contentUrl": "'.$schema_logotype.'",
+			"url": "'.$schema_logotype.'",
+			"width": "'.$schema_logotype_width.'",
+			"height": "'.$schema_logotype_height.'"
+		}
+	},
+	"url": "'.$schema_pageurl.'",
+	"inLanguage": "ru_RU"
+},
+{
+	"@type": "WebSite",
+	"@id": "'.$schema_domain.'",
+	"name": "'.$schema_sitename.'",
+	"url": "'.$schema_domain.'",
+	"inLanguage": "ru_RU"
 }';
 
-$schema_element = new Element('script', $schema_code, array('type' => 'application/ld+json')); // создание элемента
+/**
+ *  Секция для разметки Breadcrumbs
+ *	Нужно получить всех детей контейнера, и в каждом сначала искать A, а если его нет - брать сам элемент (fallback)
+ *	При обработке фоллбэка нужно проверять текстовое значение узла. Если не [a-zA-Zа-яА-Я] - это простой разделитель, не добавлять его
+*/
+
+$schema_breadcrumbsSelector = '.breadcrumbs .breadcrumb'; // контейнер, в котором будем искать крошки
+
+$schema_crumbs_resultItems = array(); // ['link' => 'name'; 'link2' => 'name'; ...]
+$schema_crumbs_container = $document->first($schema_breadcrumbsSelector);
+if (!is_null($schema_crumbs_container)){
+	$schema_crumbs = $schema_crumbs_container->children(); // собираем прямых потомков
+	if (count($schema_crumbs)){
+		foreach ($schema_crumbs as $index => $schema_crumb) { // работаем с каждым элементом крошек
+			$crumb_element = $schema_crumb->first('a'); // сначала ищем A
+			
+			if (!is_null($crumb_element)){
+				
+				// получаем ссылку
+				$crumb_link = $crumb_element->getAttribute('href');
+
+				// проверка на пустоту, '#', '/' и null
+				// если пуст или '#', ставить текущую страницу
+				// если '/', рисовать главную
+				if (is_null($crumb_link) || ($crumb_link == '#')){
+					$crumb_link = $_SERVER['REQUEST_URI'];
+				}
+
+				// получаем текст ссылки
+				$crumb_name = trim($crumb_element->text());
+			} else {
+				// ссылки в элементе не обнаружено - значит, это либо разделитель, либо последняя крошка
+				$crumb_link = $_SERVER['REQUEST_URI'];
+				$crumb_name = trim($schema_crumb->text()); // внутренний текст из всего элемента, а не какого-то потомка
+
+				// проверка на текстовое содержание элемента. Если не подпадает - это разделитель, и его нужно пропустить
+
+				if (preg_match("/[a-zA-Zа-яА-Я]/u", $crumb_name) !== 1){
+					continue;
+				}
+			}
+
+			// приводим ссылку к абсолютной
+			if (strpos($crumb_link, '//') === false){
+
+				$crumb_link = $schema_domain .'/'. trim($crumb_link, '/');
+
+				// добавляем закрывающий /
+				if ($schema_trail != false){
+					if ( (mb_strpos($crumb_link, '?') === false) && (mb_substr($crumb_link, -1, 1) !== $schema_trail) ){
+						$crumb_link .= $schema_trail;
+					}
+				}
+			}
+
+			// проверка на существование такого элемента в списке рендер-массива крошек
+			if (isset($schema_crumbs_resultItems[$crumb_link])){
+				continue;
+			}
+
+			// пополняем массив ['link' => 'name', ...]
+			$schema_crumbs_resultItems[$crumb_link] = $crumb_name;
+		}
+
+		// собрали массив ссылок, теперь формируем разметку
+		
+		$schema_breadcrumbs_crumbsJson = '';
+		$schema_index = 0;
+		foreach ($schema_crumbs_resultItems as $link => $name) {
+			// добавим запятую
+			if (strlen($schema_breadcrumbs_crumbsJson)){
+				$schema_breadcrumbs_crumbsJson .= ',';
+			}
+
+			// добавление json для крошки
+			$schema_breadcrumbs_crumbsJson .= '
+			{
+				"@type": "ListItem",
+				"position": '.($schema_index + 1).',
+				"item":
+					{
+						"@id": "'.$link.'",
+						"name": "'.$name.'"
+					}
+			}';
+
+			// увеличение индекса
+			$schema_index++;
+		}
+
+		$schema_allResultEntities[] = '{
+			"@type": "BreadcrumbList",
+			"@id": "'.$schema_pageurl.'",
+			"itemListElement":[
+				'.$schema_breadcrumbs_crumbsJson.PHP_EOL.'
+			]
+		}';
+	}
+}
+
+/**
+ * Собираем всю микроразметку вместе и выводим единым файлом
+ * Должен быть массив, в котором каждый элемент содержит текст. Нам нужно просто сделать implode массива, обренуть в обертку Схемы, и вывести скрипт
+*/
+
+$schema_code = '{
+	"@context": "https://schema.org",
+	"@graph": [
+		'.implode($schema_allResultEntities, ',').PHP_EOL.'
+	]
+}';
+
+// Добавление разметки в DOM
+$schema_element = new Element('script', $schema_code, array('type' => 'application/ld+json'));
 $document->first('div')->appendChild($schema_element);

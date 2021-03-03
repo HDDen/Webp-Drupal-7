@@ -29,9 +29,9 @@
 			}
 		}
 
-		var bgs = document.querySelectorAll('*[style*=".webp"], *[data-bg*=".webp"]');
+		var bgs = document.querySelectorAll('*[style*=".webp"], *[data-bg*=".webp"], *[data-background-image*=".webp"]');
 		if (bgs.length > 0){
-			var attribs = ['style', 'data-bg'];
+			var attribs = ['style', 'data-bg', 'data-background-image'];
 			for (var i = 0; i < bgs.length; i++){
 				for (var k = 0; k < attribs.length; k++){
 

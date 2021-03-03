@@ -1,3 +1,4 @@
-img[width][height][style*="height:"]{
+img[width][height][style*="height:"],
+img[width][height][style*="width:"]{
 	height: auto!important;
 }

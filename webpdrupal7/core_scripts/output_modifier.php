@@ -227,7 +227,8 @@ function mix_params($params = false){
 				'lazy' => false, // shortcut and option for quickly disable
 				'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
 				'attr_store_orig' => 'data-srcset', // attr to store original, lazy-loaded img src
-				'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
+				//'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
+				'inline_preloader_picture' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAQAAABeK7cBAAAACklEQVR42mMAAQAABQABoIJXOQAAAABJRU5ErkJggg==', // png is free to resize!
 				'expand_preload_area' => true, // expand image load area before it displays
 				'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
 				'expand_range' => '500', // default for expanding
@@ -237,7 +238,7 @@ function mix_params($params = false){
 				'lazy' => false, // dont process tag globally
 				'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
 				'attr_store_orig' => 'data-bg', // attr to store original, lazy-loaded img src
-				'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
+				'inline_preloader_picture' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAQAAABeK7cBAAAACklEQVR42mMAAQAABQABoIJXOQAAAABJRU5ErkJggg==',
 				'expand_preload_area' => true, // expand image load area before it displays
 				'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
 				'expand_range' => '500', // default for expanding
