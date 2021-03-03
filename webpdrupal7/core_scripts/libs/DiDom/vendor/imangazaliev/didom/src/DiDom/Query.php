@@ -211,16 +211,13 @@ class Query
         switch ($pseudo) {
             case 'first-child':
                 return 'position() = 1';
-                break;
             case 'last-child':
                 return 'position() = last()';
-                break;
             case 'nth-child':
                 $xpath = sprintf('(name()="%s") and (%s)', $tagName, self::convertNthExpression($parameters[0]));
                 $tagName = '*';
 
                 return $xpath;
-                break;
             case 'contains':
                 $string = trim($parameters[0], '\'"');
 
@@ -245,22 +242,17 @@ class Query
                 $fullMatch = $parameters[2] === 'true';
 
                 return self::convertContains($string, $caseSensitive, $fullMatch);
-                break;
             case 'has':
                 return self::cssToXpath($parameters[0], './/');
-                break;
             case 'not':
                 return sprintf('not(self::%s)', self::cssToXpath($parameters[0], ''));
-                break;
+
             case 'nth-of-type':
                 return self::convertNthExpression($parameters[0]);
-                break;
             case 'empty':
                 return 'count(descendant::*) = 0';
-                break;
             case 'not-empty':
                 return 'count(descendant::*) > 0';
-                break;
         }
 
         throw new InvalidSelectorException(sprintf('Unknown pseudo-class "%s"', $pseudo));
@@ -362,18 +354,23 @@ class Query
         switch ($symbol) {
             case '^':
                 $xpath = sprintf('starts-with(@%s, "%s")', $name, $value);
+
                 break;
             case '$':
                 $xpath = sprintf('substring(@%s, string-length(@%s) - string-length("%s") + 1) = "%s"', $name, $name, $value, $value);
+
                 break;
             case '*':
                 $xpath = sprintf('contains(@%s, "%s")', $name, $value);
+
                 break;
             case '!':
                 $xpath = sprintf('not(@%s="%s")', $name, $value);
+
                 break;
             case '~':
                 $xpath = sprintf('contains(concat(" ", normalize-space(@%s), " "), " %s ")', $name, $value);
+
                 break;
         }
 
@@ -469,11 +466,11 @@ class Query
         $classes = '(?P<classes>\.[\w|\-|\.]+)*';
         $attrs = '(?P<attrs>(?:\[.+?\])*)?';
         $name = '(?P<pseudo>[\w\-]+)';
-        $expr = '(?:\((?P<expr>[^\)]+)\))';
-        $pseudo = '(?::'.$name.$expr.'?)?';
+        $expr = '(?:\((?P<expr>.+)\))';
+        $pseudo = '(?::' . $name . $expr . '?)?';
         $rel = '\s*(?P<rel>>)?';
 
-        $regexp = '/'.$tag.$id.$classes.$attrs.$pseudo.$rel.'/is';
+        $regexp = '/' . $tag . $id . $classes . $attrs . $pseudo . $rel . '/is';
 
         if (preg_match($regexp, $selector, $segments)) {
             if ($segments[0] === '') {
