@@ -221,6 +221,7 @@ function mix_params($params = false){
 			'additional_tags' => false, // false or comma-separated css-selectors
 			'ignore_webp_on' => false, // false or comma-separated css-selectors
 			'force' => false, // force pushing webp-version
+			'store_converted_in' => false, // false or relative path, which will be added to orig path structure
 		),
 		'lazyload' => array( // array of tags or selectors
 			'img' => array( // parameters for others is equal, copy and change tagname
@@ -400,7 +401,7 @@ function process_webp($document, &$params = false){
 		}
 		// нужно получить источник изображения, преобразовать в webp
 		// а затем, когда будем встраивать webp, смотреть есть ли lazy
-		$webp_version = generate_webp($elem, $filter_by_specific_extensions); // false или путь
+		$webp_version = generate_webp($elem, $filter_by_specific_extensions, $params['webp']['store_converted_in']); // false или путь
 
 		// дебаг
 		if (WEBP_DEBUGMODE){
@@ -782,7 +783,7 @@ function unlazy($elem, &$params = false){
 	}
 }
 
-function generate_webp($elem, $filter_by_specific_extensions = false){
+function generate_webp($elem, $filter_by_specific_extensions = false, $custom_path = false){
 	if (WEBP_DEBUGMODE){
 		writeLog('  generateWebp(): старт');
 	}
@@ -794,6 +795,11 @@ function generate_webp($elem, $filter_by_specific_extensions = false){
 
 	// set home directory
 	$home_dir = get_homedir();
+
+	// trim custom path
+	if ($custom_path){
+		$custom_path = trim($custom_path, '/');
+	}
 
 	$src = false;
 	if ($tagname == 'img'){
@@ -828,7 +834,25 @@ function generate_webp($elem, $filter_by_specific_extensions = false){
 			if ($img_server_abspath !== false){
 
 				// set server abspath for generated webp
-				$img_webp_abspath = $img_server_abspath . '.webp';
+				if ($custom_path){
+					
+					// check for absolute link and store domain length
+					// will have relative path from root
+					$domain_length = mb_strpos($src, $_SERVER['HTTP_HOST']);
+					if ($domain_length != false){
+						$relative_src_path = substr($src, ($domain_length + strlen($_SERVER['HTTP_HOST'])));
+					} else {
+						$relative_src_path = $src;
+					}
+
+					// form webp abspath with custom prefix folder
+					$processed_src_path = '/' . $custom_path . $relative_src_path; // relative with custom folder
+					$img_webp_abspath = $home_dir . $processed_src_path . '.webp'; // full
+
+				} else {
+					$processed_src_path = $src;
+					$img_webp_abspath = $img_server_abspath . '.webp';
+				}
 
 				if (WEBP_DEBUGMODE){
 					writeLog('  generate_webp(): $img_webp_abspath = ' . $img_webp_abspath);
@@ -844,7 +868,7 @@ function generate_webp($elem, $filter_by_specific_extensions = false){
 		}
 
 		if ($useWebp){
-			return $src . '.webp';
+			return $processed_src_path . '.webp';
 		} else {
 			return false;
 		}

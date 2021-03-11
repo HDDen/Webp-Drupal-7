@@ -282,6 +282,14 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t('Empty or Unix timestamp. To converting all created earlier than this moment, paste this -> ').time().'<br />To check date from timestamp, use <a href="http://www.4webhelp.net/us/timestamp.php" target="_blank">this tool</a>',
   );
 
+    // custom location
+  $form['webpdrupal7_webp']['webpdrupal7_webp_customlocation'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Store converted in subfolder:'),
+    '#default_value' => variable_get('webpdrupal7_webp_customlocation', ''),
+    '#description' => t('Original folder structure with prefix. For example, "webp" will form "/webp/sites/all/default/files/1.webp"-path'),
+  );
+
 
   // Lazy-Loading
   $form['webpdrupal7_lazyload'] = array(
@@ -638,6 +646,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_webp_try_binaries',
     'webpdrupal7_webp_precompiled_path',
     'webpdrupal7_webp_reconvert_bydate',
+    'webpdrupal7_webp_customlocation',
     'webpdrupal7_lazy_imgprocess',
     'webpdrupal7_lazy_img_expand',
     'webpdrupal7_lazy_div_expand',
@@ -1114,6 +1123,7 @@ function webpdrupal7_process_html(&$variables) {
             'additional_tags' => false, // false or comma-separated css-selectors
             'ignore_webp_on' => false, // false or comma-separated css-selectors
             'force' => false, // force pushing webp-version
+            'store_converted_in' => false, // false or relative path, which will be added to orig path structure
           ),
           'lazyload' => array( // array of tags or selectors
             'img' => array( // parameters for others is equal, copy and change tagname
@@ -1296,6 +1306,14 @@ function webpdrupal7_process_html(&$variables) {
         $reconvert_by_timestamp = variable_get('webpdrupal7_webp_reconvert_bydate');
         if ($reconvert_by_timestamp && !defined('WEBP_RECONVERT_BYTIMESTAMP')){
           define('WEBP_RECONVERT_BYTIMESTAMP', $reconvert_by_timestamp);
+        }
+
+          // custom path prefix
+        $webp_customPath = variable_get('webpdrupal7_webp_customlocation');
+        if ($webp_customPath != false){
+          $params['webp']['store_converted_in'] = $webp_customPath;
+        } else {
+          $params['webp']['store_converted_in'] = false;
         }
 
 
