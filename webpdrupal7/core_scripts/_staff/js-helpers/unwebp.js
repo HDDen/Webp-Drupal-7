@@ -1,36 +1,40 @@
 !function(){function n(){
 
 	function unwebp(){
-		var imgs = document.querySelectorAll('img[src*=".webp"], img[srcset*=".webp"], img[data-src*=".webp"], img[data-srcset*=".webp"]');
+		// нужно собрать массив с атрибутами, и удалять этот атрибут.
+		// для фоновых надо удалять строку по-прежнему
 
-		if (imgs.length > 0){
-			var attribs = ['src', 'srcset', 'data-src', 'data-srcset'];
-
-			for (var i = 0; i < imgs.length; i++){
-				for (var k = 0; k < attribs.length; k++){
-
-					if (imgs[i].hasAttribute(attribs[k])){
-						var attr = imgs[i].getAttribute(attribs[k]);
+		// кастомные атрибуты просто удаляем, а src придётся модифицировать
+		var imgAttrs = ['data-srcset', 'data-src', 'srcset', 'src']; 
+		for (var i = 0; i < imgAttrs.length; i++){
+			var imgs = document.querySelectorAll('img['+imgAttrs[i]+'*=".webp"]');
+			if (imgs.length){
+				for (var k = 0; k < imgs.length; k++){
+					if (imgAttrs[i] == 'src'){
+						var attr = imgs[k].getAttribute(imgAttrs[i]);
 						attr = attr.replace('.webp', '');
-						imgs[i].setAttribute(attribs[k], attr);
+						imgs[k].setAttribute(imgAttrs[i], attr);
+					} else {
+						imgs[k].removeAttribute(imgAttrs[i]);
+						imgs[k].setAttribute(imgAttrs[i], imgs[k].src);
 					}
-
 				}
 			}
 		}
+		// если оставили lazyload в srcset, и убрали data-srcset, получим пустую картинку.
+		// поэтому переназначим
+		//window.lazySizesConfig = window.lazySizesConfig || {};
+		//window.lazySizesConfig.srcsetAttr = 'src';
+		// этот подход не сработал
 
-		var bgs = document.querySelectorAll('*[style*=".webp"], *[data-bg*=".webp"], *[data-background-image*=".webp"]');
-		if (bgs.length > 0){
-			var attribs = ['style', 'data-bg', 'data-background-image'];
-			for (var i = 0; i < bgs.length; i++){
-				for (var k = 0; k < attribs.length; k++){
-
-					if (bgs[i].hasAttribute(attribs[k])){
-						var attr = bgs[i].getAttribute(attribs[k]);
-						attr = attr.replace('.webp', '');
-						bgs[i].setAttribute(attribs[k], attr);
-					}
-
+		var bgAttrs = ['data-background-image', 'data-bg', 'style'];
+		for (var i = 0; i < bgAttrs.length; i++){
+			var els = document.querySelectorAll('*['+bgAttrs[i]+'*=".webp"]');
+			if (els.length){
+				for (var k = 0; k < els.length; k++){
+					var attr = els[k].getAttribute(bgAttrs[i]);
+					attr = attr.replace('.webp', '');
+					els[k].setAttribute(bgAttrs[i], attr);
 				}
 			}
 		}
