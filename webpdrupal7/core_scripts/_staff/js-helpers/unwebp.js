@@ -1,14 +1,4 @@
 !function(){function n(){
-    function testWebP(cbk) {
-	    var w = new Image();
-	    w.onerror = function () {
-	        cbk(false);
-	    };
-	    w.onload = function () {
-	    	cbk(true);
-	    }
-	    w.src = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
-	};
 
 	function unwebp(){
 		var imgs = document.querySelectorAll('img[src*=".webp"], img[srcset*=".webp"], img[data-src*=".webp"], img[data-srcset*=".webp"]');
@@ -46,19 +36,16 @@
 		}
 	}
 
-	var ht = document.getElementsByTagName("html")[0];
-	if (!(ht.classList.contains('webp-on'))){
-		if (ht.classList.contains('webp-off')){
-			unwebp();
+	var d = document.documentElement.classList;
+	if (!(d.contains("webp-on"))){
+		if(!d.contains("webp-off")){
+			var webp = "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
+			var img = new Image();
+			img.onload = function(){d.add("webp-on")};
+			img.onerror = function(){d.add("webp-off"); unwebp()};
+			img.src = webp;
 		} else {
-			testWebP(function(support) {
-			    if (!support){
-			    	ht.classList.add('webp-off');
-			    	unwebp();
-			    } else {
-			    	ht.classList.add('webp-on');
-			    }
-			});
+			unwebp();
 		}
 	}
 
