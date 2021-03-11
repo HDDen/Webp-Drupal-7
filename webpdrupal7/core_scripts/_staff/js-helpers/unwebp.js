@@ -1,9 +1,6 @@
 !function(){function n(){
 
 	function unwebp(){
-		// нужно собрать массив с атрибутами, и удалять этот атрибут.
-		// для фоновых надо удалять строку по-прежнему
-
 		// кастомные атрибуты просто удаляем, а src придётся модифицировать
 		var imgAttrs = ['data-srcset', 'data-src', 'srcset', 'src']; 
 		for (var i = 0; i < imgAttrs.length; i++){
@@ -15,17 +12,12 @@
 						attr = attr.replace('.webp', '');
 						imgs[k].setAttribute(imgAttrs[i], attr);
 					} else {
-						imgs[k].removeAttribute(imgAttrs[i]);
+						//imgs[k].removeAttribute(imgAttrs[i]);
 						imgs[k].setAttribute(imgAttrs[i], imgs[k].src);
 					}
 				}
 			}
 		}
-		// если оставили lazyload в srcset, и убрали data-srcset, получим пустую картинку.
-		// поэтому переназначим
-		//window.lazySizesConfig = window.lazySizesConfig || {};
-		//window.lazySizesConfig.srcsetAttr = 'src';
-		// этот подход не сработал
 
 		var bgAttrs = ['data-background-image', 'data-bg', 'style'];
 		for (var i = 0; i < bgAttrs.length; i++){
