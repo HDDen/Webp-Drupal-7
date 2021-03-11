@@ -35,15 +35,43 @@ if (count($labels)){
 }
 unset($labels);
 
+// удаляем name=forma
+$form_markers = $document->find('a#forma[name="forma"]');
+if (count($form_markers)){
+	foreach ($form_markers as $marker) {
+		$marker->removeAttribute('name');
+	}
+}
+unset($form_markers);
+
 // фиксим дублирование id блока телефона
 $phoneblock = $document->find('#block-block-1');
-if (count($phoneblock > 1)){
+if (count($phoneblock) > 1){
 	unset($phoneblock[0]);
 	foreach ($phoneblock as $bl_index => $block) {
 		$block->setAttribute('id', 'block-block-1-'.$bl_index);
 	}
 }
 unset($phoneblock);
+
+// фиксим дублирование блока капчи
+$capchablock = $document->find('#captcha_response');
+if (count($capchablock > 1)){
+	unset($capchablock[0]);
+	foreach ($capchablock as $bl_index => $block) {
+		$block->setAttribute('id', 'captcha_response-'.$bl_index);
+	}
+}
+unset($capchablock);
+
+$capchainput = $document->find('#edit-captcha-response');
+if (count($capchainput) > 1){
+	unset($capchainput[0]);
+	foreach ($capchainput as $bl_index => $block) {
+		$block->setAttribute('id', 'edit-captcha-response-'.$bl_index);
+	}
+}
+unset($capchainput);
 
 // удалим устаревшие атрибуты из table, заменив их на класс
 $tables = $document->find('table');
@@ -65,6 +93,15 @@ if (count($tables)){
 	}
 }
 unset($tables);
+
+// удалим устаревшие атрибуты из iframe
+$iframes = $document->find('iframe[frameborder]');
+if (count($iframes)){
+	foreach ($iframes as $iframe) {
+		$iframe->removeAttribute('frameborder');
+	}
+}
+unset($iframes);
 
 // внешние и некоторые внутренние ссылки в nofollow
 $nofollow_links = array(

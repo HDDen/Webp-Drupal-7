@@ -38,7 +38,7 @@
 			}
 	        cbk(false);
 	    };
-	    w.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+	    w.src = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
 	};
 
 	function unwebp(){
@@ -91,7 +91,7 @@
 			debug_output.innerHTML += '<p>unwebp(): теперь фоновые</p>';
 		}
 
-		var bgs = document.querySelectorAll('*[style*=".webp"], *[data-bg*=".webp"]');
+		var bgs = document.querySelectorAll('*[style*=".webp"], *[data-bg*=".webp"], *[data-background-image*=".webp"]');
 
 		if (debug_mode){
 			debug_output.innerHTML += '<p>unwebp(): bgs.length = '+bgs.length+'</p>';
@@ -101,7 +101,7 @@
 			if (debug_mode){
 				debug_output.innerHTML += '<p>unwebp(): старт перебора bgs</p>';
 			}
-			var attribs = ['style', 'data-bg'];
+			var attribs = ['style', 'data-bg', 'data-background-image'];
 			for (var i = 0; i < bgs.length; i++){
 				for (var k = 0; k < attribs.length; k++){
 
