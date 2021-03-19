@@ -1,6 +1,8 @@
 (function(){
 	var d = document.documentElement.classList;
 	if (!(d.contains("avif-on") || d.contains("avif-off"))){
+		//add checking-flag to prevent webp-loading
+		d.add('check-avif');
 		// check localstorage
 		var sto = window.localStorage;
 		var localStorageWebp = sto.getItem('avifsupp');
@@ -15,5 +17,7 @@
 			img.onerror = function(){d.add("avif-off");sto.setItem('avifsupp', '0')};
 			img.src = avif;
 		}
+		// remove preventing
+		d.remove('check-avif');
 	}
 })();

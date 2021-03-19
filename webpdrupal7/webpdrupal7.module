@@ -144,10 +144,26 @@ function webpdrupal7_form($form, &$form_state) {
       '#description' => t('Force storing webp-version. It will be useful in case using drupal caching (for prevent generate non-webp cached page once and for next 6 hours). Recommended with use "srcset" for storing webp-version.'),
   );
 
+    // load manner of webp-detect.js
+    // moved from lazyload-section
+  $form['webpdrupal7_lazyload']['webpdrupal7_webpdetect_asyncjs'] = array(
+    '#type' => 'select',
+    '#title' => t('Load js for webp-detect in async/defer manner:'),
+    '#options' => array(
+      0 => t('Header, inline'),
+      1 => t('Header, external, blocking'),
+      2 => t('Header, async'),
+      3 => t('Footer, defer'),
+      4 => t('Skip loading')
+    ),
+    '#default_value' => variable_get('webpdrupal7_webpdetect_asyncjs', 2),
+    //'#description' => t(''),
+  );
+
     // add js-helper to prevent unsupported Safari/IE see webp-versions. Needed if you dont use nginx/apache rewrite rules for serving webp or you are behind of CDN.
   $form['webpdrupal7_webp']['webpdrupal7_webp_force_jshelper'] = array(
       '#type' => 'select',
-      '#title' => t('Add js-helper for prevent showing .webp in unsupported browsers:'),
+      '#title' => t('Add js-helper for prevent showing .webp in unsupported browsers (have webp-detect code inside!):'),
       '#options' => array(
         0 => t('No'),
         1 => t('Yes'),
@@ -155,6 +171,23 @@ function webpdrupal7_form($form, &$form_state) {
       '#default_value' => variable_get('webpdrupal7_webp_force_jshelper', 0),
       '#description' => t('Needed if you used caching and dont use nginx/apache rewrite rules for serving webp (you are behind of CDN, for example). Helper will check browser on client-side, then will modify src/srcset/data-* attributes to remove ".webp".'),
   );
+
+    // add avif-detect
+  $form['webpdrupal7_lazyload']['webpdrupal7_avifdetect_load'] = array(
+    '#type' => 'select',
+    '#title' => t('Load js for avif-detect:'),
+    '#options' => array(
+      0 => t('Header, inline'),
+      1 => t('Header, external, blocking'),
+      2 => t('Header, async'),
+      3 => t('Footer, defer'),
+      4 => t('Skip loading')
+    ),
+    '#default_value' => variable_get('webpdrupal7_avifdetect_load', 2),
+    //'#description' => t(''),
+  );
+
+
 
     // converter options
   $form['webpdrupal7_webp']['converter'] = array(
@@ -397,21 +430,6 @@ function webpdrupal7_form($form, &$form_state) {
         2 => t('defer'),
       ),
       '#default_value' => variable_get('webpdrupal7_lazy_asyncjs', 1),
-      //'#description' => t(''),
-  );
-
-  // load manner of webp-detect.js
-  $form['webpdrupal7_lazyload']['webpdrupal7_webpdetect_asyncjs'] = array(
-      '#type' => 'select',
-      '#title' => t('Load js for webp-detect in async/defer manner:'),
-      '#options' => array(
-        0 => t('Header, inline'),
-        1 => t('Header, external, blocking'),
-        2 => t('Header, async'),
-        3 => t('Footer, defer'),
-        4 => t('Skip loading')
-      ),
-      '#default_value' => variable_get('webpdrupal7_webpdetect_asyncjs', 2),
       //'#description' => t(''),
   );
 
@@ -658,6 +676,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_lazy_bgattr',
     'webpdrupal7_lazy_asyncjs',
     'webpdrupal7_webpdetect_asyncjs',
+    'webpdrupal7_avifdetect_load',
     'webpdrupal7_cdn_enabled',
     'webpdrupal7_cdn_domain',
     'webpdrupal7_cdn_absenabled',
@@ -837,7 +856,58 @@ function webpdrupal7_preprocess_html(&$head_elements){
   		}
   	}
 
-    // Вспомогательный js определения поддержки webp в браузере (полезно для фоновых изображений)
+    // Вспомогательный js определения поддержки webp/avif в браузере (полезно для фоновых изображений)
+    // avifdetect
+    switch (intval(variable_get('webpdrupal7_avifdetect_load'))){
+      case 0:
+        // Header, inline
+        drupal_add_js(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js'), array(
+          'type' => 'inline',
+          'scope' => 'header',
+          'weight' => 1,
+        ));
+        break;
+      case 1:
+        // Header, external, blocking
+        // CDN support
+        if ($useCDN){
+          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('scope' => 'header', 'type' => 'external'));
+        } else {
+          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('scope' => 'header'));
+        }
+        break;
+
+      case 2:
+        // Header, async
+        // async
+        $webp_detect_js = [
+          '#tag' => 'script',
+          '#value' => '',
+          '#attributes' => [
+            'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js',
+            'async' => "async",
+          ],
+        ];
+        drupal_add_html_head($webp_detect_js, 'webp_detect_js');
+
+        break;
+
+      case 3:
+        // Footer, defer
+
+        // CDN support
+        if ($useCDN){
+          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+        } else {
+          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+        }
+        break;
+
+      case 4:
+        // Skip loading
+        break;
+    }
+    // webpdetect
     switch (intval(variable_get('webpdrupal7_webpdetect_asyncjs'))){
       case 0:
         // Header, inline
