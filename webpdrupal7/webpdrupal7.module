@@ -147,20 +147,6 @@ function webpdrupal7_form($form, &$form_state) {
     '#default_value' => variable_get('webpdrupal7_webpdetect_asyncjs', 2),
     //'#description' => t(''),
   );
-    // add avif-detect
-  $form['webpdrupal7_webp']['webpdrupal7_avifdetect_load'] = array(
-    '#type' => 'select',
-    '#title' => t('Add js-helper for avif-detect:'),
-    '#options' => array(
-      0 => t('Header, inline'),
-      1 => t('Header, external, blocking'),
-      2 => t('Header, async'),
-      3 => t('Footer, defer'),
-      4 => t('Skip loading')
-    ),
-    '#default_value' => variable_get('webpdrupal7_avifdetect_load', 4),
-    '#description' => t('Adds "checked-avif" and "avif-on/-off"-classnames to html. Loads before webp-detect or unwebp.'),
-  );
 
     // force webp convert
   $form['webpdrupal7_webp']['webpdrupal7_webp_force'] = array(
@@ -622,6 +608,21 @@ function webpdrupal7_form($form, &$form_state) {
     ),
     '#default_value' => variable_get('webpdrupal7_fallback_alt', 1),
     '#description' => t('Add alt="" to all imgs without'),
+  );
+
+    // add avif-detect
+  $form['webpdrupal7_experimental']['webpdrupal7_avifdetect_load'] = array(
+    '#type' => 'select',
+    '#title' => t('Add js-helper for avif-detect:'),
+    '#options' => array(
+      0 => t('Header, inline'),
+      1 => t('Header, external, blocking'),
+      2 => t('Header, async'),
+      3 => t('Footer, defer'),
+      4 => t('Skip loading')
+    ),
+    '#default_value' => variable_get('webpdrupal7_avifdetect_load', 4),
+    '#description' => t('Adds "checked-avif" and "avif-on/-off"-classnames to html. Loads before webp-detect or unwebp.'),
   );
 
 
