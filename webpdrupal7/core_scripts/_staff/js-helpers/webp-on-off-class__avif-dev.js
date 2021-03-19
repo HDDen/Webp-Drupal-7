@@ -1,19 +1,35 @@
 (function(){
 	var d = document.documentElement.classList;
+	var sto = window.localStorage;
+	var sup;
 	if (!(d.contains("avif-on") || d.contains("avif-off"))){
-		var avif = "data:image/avif;base64,AAAAFGZ0eXBhdmlmAAAAAG1pZjEAAACgbWV0YQAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAC8AAAAGwAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAARWlwcnAAAAAoaXBjbwAAABRpc3BlAAAAAAAAAAQAAAAEAAAADGF2MUOBAAAAAAAAFWlwbWEAAAAAAAAAAQABAgECAAAAI21kYXQSAAoIP8R8hAQ0BUAyDWeeUy0JG+QAACANEkA=";
-		var img = new Image();
-		img.onload = function(){d.add("avif-on")};
-		img.onerror = function(){d.add("avif-off")};
-		img.src = avif;
+		sup = sto.getItem('avifsupp');
+		if (sup == '1'){
+			d.add("avif-on");
+		} else if (sup == '0'){
+			d.add("avif-off");
+		} else {
+			var avif = "data:image/avif;base64,AAAAFGZ0eXBhdmlmAAAAAG1pZjEAAACgbWV0YQAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAC8AAAAGwAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAARWlwcnAAAAAoaXBjbwAAABRpc3BlAAAAAAAAAAQAAAAEAAAADGF2MUOBAAAAAAAAFWlwbWEAAAAAAAAAAQABAgECAAAAI21kYXQSAAoIP8R8hAQ0BUAyDWeeUy0JG+QAACANEkA=";
+			var img = new Image();
+			img.onload = function(){d.add("avif-on");sto.setItem('avifsupp', '1')};
+			img.onerror = function(){d.add("avif-off");sto.setItem('avifsupp', '0')};
+			img.src = avif;
+		}
 	}
 
 	if (!(d.contains("webp-on") || d.contains("webp-off"))){
-		var webp = "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
-		var img = new Image();
-		img.onload = function(){d.add("webp-on")};
-		img.onerror = function(){d.add("webp-off")};
-		img.src = webp;
+		sup = sto.getItem('webpsupp');
+		if (sup == '1'){
+			d.add("webp-on");
+		} else if (sup == '0'){
+			d.add("webp-off");
+		} else {
+			var webp = "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
+			var img = new Image();
+			img.onload = function(){d.add("webp-on");sto.setItem('webpsupp', '1')};
+			img.onerror = function(){d.add("webp-off");sto.setItem('webpsupp', '0')};
+			img.src = webp;
+		}
 	}
 })();
 
@@ -22,15 +38,24 @@
 	// AVIF supporting
 	var d = document.documentElement.classList;
 	function testImg(type){
-		var avif = "data:image/avif;base64,AAAAFGZ0eXBhdmlmAAAAAG1pZjEAAACgbWV0YQAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAC8AAAAGwAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAARWlwcnAAAAAoaXBjbwAAABRpc3BlAAAAAAAAAAQAAAAEAAAADGF2MUOBAAAAAAAAFWlwbWEAAAAAAAAAAQABAgECAAAAI21kYXQSAAoIP8R8hAQ0BUAyDWeeUy0JG+QAACANEkA=";
-		var webp = "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
-		var img = new Image();
-		img.onload = function(){d.add(type+'-on')};
-		img.onerror = function(){d.add(type+'-off')};
-		if (type == "avif"){
-			img.src = avif;
+		var sto = window.localStorage;
+		var sup = sto.getItem(type+'supp');
+		// localStorage
+		if (sup == '1'){
+			d.add(type+'-on');
+		} else if (sup == '0'){
+			d.add(type+'-off');
 		} else {
-			img.src = webp;
+			var avif = "data:image/avif;base64,AAAAFGZ0eXBhdmlmAAAAAG1pZjEAAACgbWV0YQAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAC8AAAAGwAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAARWlwcnAAAAAoaXBjbwAAABRpc3BlAAAAAAAAAAQAAAAEAAAADGF2MUOBAAAAAAAAFWlwbWEAAAAAAAAAAQABAgECAAAAI21kYXQSAAoIP8R8hAQ0BUAyDWeeUy0JG+QAACANEkA=";
+			var webp = "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
+			var img = new Image();
+			img.onload = function(){d.add(type+'-on');sto.setItem(type+'supp','1')};
+			img.onerror = function(){d.add(type+'-off');sto.setItem(type+'supp','0')};
+			if (type == "avif"){
+				img.src = avif;
+			} else {
+				img.src = webp;
+			}
 		}
 	}
 	if (!(d.contains("avif-on") || d.contains("avif-off"))){
@@ -42,7 +67,7 @@
 })();
 */
 
-/* without prechecking
+/* without prechecking, and no-cache
 (function(){
 	function addClass(classname){ document.documentElement.classList.add(classname) }
 	// avif
