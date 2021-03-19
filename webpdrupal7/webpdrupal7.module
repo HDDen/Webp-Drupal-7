@@ -132,21 +132,9 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t("Only single-level selectors! 'img.classname', for example. This elems will haven't webp-version"),
   );
 
-    // force webp convert
-  $form['webpdrupal7_webp']['webpdrupal7_webp_force'] = array(
-      '#type' => 'select',
-      '#title' => t('Force webp-storing even for unsupported browsers:'),
-      '#options' => array(
-        0 => t('No (without caching, pages are generated for each visitor separatelly)'),
-        1 => t('Yes (if drupal/external caching is enabled)'),
-      ),
-      '#default_value' => variable_get('webpdrupal7_webp_force', 0),
-      '#description' => t('Force storing webp-version. It will be useful in case using drupal caching (for prevent generate non-webp cached page once and for next 6 hours). Recommended with use "srcset" for storing webp-version.'),
-  );
-
     // load manner of webp-detect.js
     // moved from lazyload-section
-  $form['webpdrupal7_lazyload']['webpdrupal7_webpdetect_asyncjs'] = array(
+  $form['webpdrupal7_webp']['webpdrupal7_webpdetect_asyncjs'] = array(
     '#type' => 'select',
     '#title' => t('Load js for webp-detect in async/defer manner:'),
     '#options' => array(
@@ -159,23 +147,10 @@ function webpdrupal7_form($form, &$form_state) {
     '#default_value' => variable_get('webpdrupal7_webpdetect_asyncjs', 2),
     //'#description' => t(''),
   );
-
-    // add js-helper to prevent unsupported Safari/IE see webp-versions. Needed if you dont use nginx/apache rewrite rules for serving webp or you are behind of CDN.
-  $form['webpdrupal7_webp']['webpdrupal7_webp_force_jshelper'] = array(
-      '#type' => 'select',
-      '#title' => t('Add js-helper for prevent showing .webp in unsupported browsers (have webp-detect code inside!):'),
-      '#options' => array(
-        0 => t('No'),
-        1 => t('Yes'),
-      ),
-      '#default_value' => variable_get('webpdrupal7_webp_force_jshelper', 0),
-      '#description' => t('Needed if you used caching and dont use nginx/apache rewrite rules for serving webp (you are behind of CDN, for example). Helper will check browser on client-side, then will modify src/srcset/data-* attributes to remove ".webp".'),
-  );
-
     // add avif-detect
-  $form['webpdrupal7_lazyload']['webpdrupal7_avifdetect_load'] = array(
+  $form['webpdrupal7_webp']['webpdrupal7_avifdetect_load'] = array(
     '#type' => 'select',
-    '#title' => t('Load js for avif-detect:'),
+    '#title' => t('Add js-helper for avif-detect:'),
     '#options' => array(
       0 => t('Header, inline'),
       1 => t('Header, external, blocking'),
@@ -183,8 +158,32 @@ function webpdrupal7_form($form, &$form_state) {
       3 => t('Footer, defer'),
       4 => t('Skip loading')
     ),
-    '#default_value' => variable_get('webpdrupal7_avifdetect_load', 2),
-    //'#description' => t(''),
+    '#default_value' => variable_get('webpdrupal7_avifdetect_load', 4),
+    '#description' => t('Adds "checked-avif" and "avif-on/-off"-classnames to html. Loads before webp-detect or unwebp.'),
+  );
+
+    // force webp convert
+  $form['webpdrupal7_webp']['webpdrupal7_webp_force'] = array(
+      '#type' => 'select',
+      '#title' => t('Force webp-storing even for unsupported browsers:'),
+      '#options' => array(
+        0 => t('No (without caching, pages are generated for each visitor separatelly)'),
+        1 => t('Yes (if drupal/external caching is enabled)'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_webp_force', 0),
+      '#description' => t('Force storing webp-version. It will be useful in case using drupal caching (for prevent generate non-webp cached page once and for next 6 hours). Recommended with use "srcset" for storing webp-version.'),
+  );
+
+    // add js-helper to prevent unsupported Safari/IE see webp-versions. Needed if you dont use nginx/apache rewrite rules for serving webp or you are behind of CDN.
+  $form['webpdrupal7_webp']['webpdrupal7_webp_force_jshelper'] = array(
+      '#type' => 'select',
+      '#title' => t('Add js-helper for prevent showing .webp in unsupported browsers:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Yes'),
+      ),
+      '#default_value' => variable_get('webpdrupal7_webp_force_jshelper', 0),
+      '#description' => t('Needed if you used caching and dont use nginx/apache rewrite rules for serving webp (you are behind of CDN, for example). Helper will check browser on client-side, then will modify src/srcset/data-* attributes to remove ".webp".'.'<br /><span style="color: red;">Warning!</span> Contains webp-detect code inside, so you dont need load webp-detect.js (but you can).'),
   );
 
 
