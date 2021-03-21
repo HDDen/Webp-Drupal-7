@@ -223,6 +223,11 @@ function mix_params($params = false){
 			'force' => false, // force pushing webp-version
 			'store_converted_in' => false, // false or relative path, which will be added to orig path structure
 		),
+		'avif' => array(
+			'enabled' => false, // search and store avif-version
+			'process_on' => '', // empty or comma-separates selectors
+			'path_prefix' => false, // false or prefix for original path structure, e.g. 'avif'. No slashes at begin or end 
+		),
 		'lazyload' => array( // array of tags or selectors
 			'img' => array( // parameters for others is equal, copy and change tagname
 				'lazy' => false, // shortcut and option for quickly disable
@@ -486,6 +491,122 @@ function process_webp($document, &$params = false){
 
 		}
 
+	}
+
+}
+
+function process_avif($document, &$params = false){
+	if (WEBP_DEBUGMODE){
+		writeLog('process_avif(): Зашли в функцию');
+	}
+	if (!$params['avif']['enabled'] || !$params['avif']['process_on']){
+		if (WEBP_DEBUGMODE){
+			writeLog('process_avif(): процессинг не включен в настройках! Выход.');
+		}
+
+		return false;
+	}
+
+	// Нужно собрать селекторы и сделать выборку
+	// Если элементы присутствуют, отправляем по-одному в функцию одиночной обработки
+	$selectors = normalize_commaseparated($params['avif']['process_on']);
+	$elems = $document->find($selectors);
+	if (count($elems)){
+		foreach ($elems as $index => $elem) {
+			if (WEBP_DEBUGMODE){
+				writeLog(PHP_EOL.'-----'.PHP_EOL.'Avif-процессинг ' . $elem . ': ');
+			}
+			$result = process_avif_once($elem, $params);
+			if (WEBP_DEBUGMODE){
+				writeLog('Результат процессинга: '.( $result ? 'успех!' : 'отказ').PHP_EOL.'-----');
+			}
+		}
+	}
+
+	if (WEBP_DEBUGMODE){
+		writeLog('process_avif(): обработали весь массив для avif');
+	}
+}
+
+function process_avif_once($elem, &$params){
+	// проверяем, что еще не обрабатывали элемент
+	if ($elem->hasAttribute('data-avif')){
+		if (WEBP_DEBUGMODE){
+			writeLog('  process_avif_once(): этот элемент уже содержит атрибут "data-avif"');
+		}
+		return true;
+	}
+	
+	// получаем элемент - определяем его тип
+	$tagname = $elem->tag;
+
+	// итоговая переменная, будем присваивать вычисенный потенциальный путь к avif ей
+	$patch_to_check = false;
+	// серверный путь к document root
+	$home_dir = get_homedir();
+	// кастомная папка для avif
+	$custom_path_prefix = trim($params['avif']['path_prefix']);
+	if ($custom_path_prefix){
+		$custom_path_prefix = '/' . $custom_path_prefix;
+	}
+
+	if (WEBP_DEBUGMODE){
+		writeLog('  process_avif_once(): $custom_path_prefix = "'.$custom_path_prefix.'"');
+	}
+
+	// определяем путь для проверки
+	// должен заканчиваться на .avif и содержать оригинальное расширение файла
+	// вычисляем серверный путь *.*.avif, затем проверяем наличие. Если есть - пушим атрибут. Если нет - не пушим.
+	if ($tagname == 'img'){
+
+		// проверяем src. Разбираем на относительный путь, формируем серверный путь для проверки с учётом custom location.
+		if ($elem->hasAttribute('src')){
+			$src = $elem->getAttribute('src');
+			$relative_uri = getRelativeUri($src, $home_dir); // false or path
+			if ($relative_uri){
+				$patch_to_check = $home_dir . $custom_path_prefix . $relative_uri . '.avif';
+			}
+		} else {
+			if (WEBP_DEBUGMODE){
+				writeLog('  process_avif_once(): элемент - img, но не содержит src');
+			}
+		}
+		
+	} else {
+		// нужно парсить из стиля
+		if ($elem->hasAttribute('style')){
+			$style = $elem->getAttribute('style');
+			$relative_uri = getRelativeUri(parseBackgroundImgUri($style), $home_dir); // false or path
+			if ($relative_uri){
+				$patch_to_check = $home_dir . $custom_path_prefix . $relative_uri . '.avif';
+			}
+		} else {
+			if (WEBP_DEBUGMODE){
+				writeLog('  process_avif_once(): элемент не img и не содержит style');
+			}
+		}
+	}
+
+	// проверяем наличие
+	if (!$patch_to_check){
+		if (WEBP_DEBUGMODE){
+			writeLog('  process_avif_once(): не смогли вычислить путь для проверки');
+		}
+		return false;
+	}
+
+	if (file_exists($patch_to_check)){
+		// всё ок, добавляем атрибут
+		$elem->setAttribute('data-avif', $custom_path_prefix . $relative_uri . '.avif');
+		if (WEBP_DEBUGMODE){
+			writeLog('  process_avif_once(): успешно добавили data-avif="'. $custom_path_prefix . $relative_uri . '.avif"');
+		}
+		return true;
+	} else {
+		if (WEBP_DEBUGMODE){
+			writeLog('  process_avif_once(): файла '. $patch_to_check . ' не существует');
+		}
+		return false;
 	}
 
 }
@@ -874,6 +995,43 @@ function generate_webp($elem, $filter_by_specific_extensions = false, $custom_pa
 		}
 
 	} else {
+		return false;
+	}
+}
+
+// Принимает абсюлютный/относительный uri, возвращает относительный 
+function getRelativeUri($src, $home_dir = false){
+	
+	if (!$home_dir){
+		$home_dir = get_homedir();
+	}
+
+	// можно провести оптимизацию - если первый символ "/", то это уже относительный путь
+	if ( mb_substr($src, 0, 1) == '/'){
+		if (WEBP_DEBUGMODE){
+			writeLog('  getRelativeUri(): ранний детект относительного пути - "'.$src.'" уже является таковым!');
+		}
+		return $src;
+	}	
+
+	// Это получит серверный путь оригинала
+	$full_server_path = parsePathFromSrc($src, $home_dir); // false / path
+		
+	if ($full_server_path){
+		// теперь можно заменить $home_dir на '' и получить относительный
+		$docroot_relative_path = str_replace($home_dir, '', $full_server_path);
+
+		if (WEBP_DEBUGMODE){
+			writeLog('  getRelativeUri(): получили относительный "'.$docroot_relative_path.'"');
+		}
+
+		return $docroot_relative_path;
+
+	} else {
+		// вернулся false
+		if (WEBP_DEBUGMODE){
+			writeLog('  getRelativeUri(): не распознали серверный путь для $src="'.$src.'"');
+		}
 		return false;
 	}
 }
@@ -1287,6 +1445,9 @@ function modifyImagesWebp($output, $params = false){
 
 	// Шаг 1. Проходим webp
 	process_webp($document, $params);
+
+	// Шаг 1.1. Проходим avif до lazyload
+	process_avif($document, $params);
 
 	// Шаг 2. Проходим LazyLoading
 	process_lazy($document, $params);

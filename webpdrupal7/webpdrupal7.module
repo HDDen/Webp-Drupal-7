@@ -610,8 +610,15 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t('Add alt="" to all imgs without'),
   );
 
-    // add avif-detect
-  $form['webpdrupal7_experimental']['webpdrupal7_avifdetect_load'] = array(
+    // avif-section
+  $form['webpdrupal7_experimental']['avif'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('AVIF options:'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+    // add avif-detect js
+  $form['webpdrupal7_experimental']['avif']['webpdrupal7_avifdetect_load'] = array(
     '#type' => 'select',
     '#title' => t('Add js-helper for avif-detect:'),
     '#options' => array(
@@ -624,8 +631,31 @@ function webpdrupal7_form($form, &$form_state) {
     '#default_value' => variable_get('webpdrupal7_avifdetect_load', 4),
     '#description' => t('Adds "checked-avif" and "avif-on/-off"-classnames to html. Loads before webp-detect or unwebp.'),
   );
-
-
+    // add avif-version if exists
+  $form['webpdrupal7_experimental']['avif']['webpdrupal7_avif_store'] = array(
+    '#type' => 'select',
+    '#title' => t('Store AVIF-version if exists:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_avif_store', 0),
+    '#description' => t('Store url for avif-version in "data-avif"-attribute. You must convert picture manually!'),
+  );
+    // process in tags
+  $form['webpdrupal7_experimental']['avif']['webpdrupal7_avif_processon'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Search avif for these selectors:'),
+    '#default_value' => variable_get('webpdrupal7_avif_processon', 'img'),
+    '#description' => t('Img, *[style*="background"]. Empty or comma-separated selectors'),
+  );
+    // custom location
+  $form['webpdrupal7_experimental']['avif']['webpdrupal7_avif_customlocation'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Search avif in subfolder:'),
+    '#default_value' => variable_get('webpdrupal7_avif_customlocation', ''),
+    '#description' => t('Original folder structure with prefix. For example, "avif" will form "/avif/sites/all/default/files/*.avif"-path'),
+  );
 
   return system_settings_form($form);
 }
@@ -676,7 +706,6 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_lazy_bgattr',
     'webpdrupal7_lazy_asyncjs',
     'webpdrupal7_webpdetect_asyncjs',
-    'webpdrupal7_avifdetect_load',
     'webpdrupal7_cdn_enabled',
     'webpdrupal7_cdn_domain',
     'webpdrupal7_cdn_absenabled',
@@ -691,7 +720,11 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_asyncimg',
     'webpdrupal7_setsizes',
     'webpdrupal7_setsizes_csshelper',
-    'webpdrupal7_fallback_alt'
+    'webpdrupal7_fallback_alt',
+    'webpdrupal7_avifdetect_load',
+    'webpdrupal7_avif_store',
+    'webpdrupal7_avif_customlocation',
+    'webpdrupal7_avif_processon'
   );
 
   return $params;
@@ -1195,6 +1228,11 @@ function webpdrupal7_process_html(&$variables) {
             'force' => false, // force pushing webp-version
             'store_converted_in' => false, // false or relative path, which will be added to orig path structure
           ),
+          'avif' => array(
+            'enabled' => false, // search and store avif-version
+            'process_on' => '', // empty or comma-separates selectors
+            'path_prefix' => false, // false or prefix for original path structure, e.g. 'avif'. No slashes at begin or end 
+          ),
           'lazyload' => array( // array of tags or selectors
             'img' => array( // parameters for others is equal, copy and change tagname
               'lazy' => false, // shortcut and option for quickly disable
@@ -1517,6 +1555,24 @@ function webpdrupal7_process_html(&$variables) {
 
         // add alt="async" to <img>-tags
         $params['fallback_alt'] = variable_get('webpdrupal7_fallback_alt');
+
+        // AVIF
+        if (variable_get('webpdrupal7_avif_store') != false){
+          $params['avif']['enabled'] = true;
+        }
+
+          // process on selectors
+        $avif_selectors = variable_get('webpdrupal7_avif_processon');
+        if ($avif_selectors){
+          $params['avif']['process_on'] = $avif_selectors;
+        }
+
+          // avif custom location
+        $avif_location = variable_get('webpdrupal7_avif_customlocation');
+        if ($avif_location){
+          $params['avif']['path_prefix'] = $avif_location;
+        }
+
 
         // CDN
         if (variable_get('webpdrupal7_cdn_enabled') != false){
