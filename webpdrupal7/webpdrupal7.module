@@ -640,7 +640,7 @@ function webpdrupal7_form($form, &$form_state) {
       1 => t('Yes'),
     ),
     '#default_value' => variable_get('webpdrupal7_avif_store', 0),
-    '#description' => t('Store url for avif-version in "data-avif"-attribute. You must convert picture manually!<br /><span style="color: red;">Warning!</span> Currently handled only by modified version of lozad.js'),
+    '#description' => t('Store url for avif-version in "data-avif"-attribute. You must convert picture manually!<br /><span style="color: red;">Warning!</span> Currently tested only by modified version of lozad.js, lazysizes-implementation worked in beta-mode'),
   );
     // process in tags
   $form['webpdrupal7_experimental']['avif']['webpdrupal7_avif_processon'] = array(
