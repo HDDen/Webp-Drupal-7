@@ -640,7 +640,7 @@ function webpdrupal7_form($form, &$form_state) {
       1 => t('Yes'),
     ),
     '#default_value' => variable_get('webpdrupal7_avif_store', 0),
-    '#description' => t('Store url for avif-version in "data-avif"-attribute. You must convert picture manually!'),
+    '#description' => t('Store url for avif-version in "data-avif"-attribute. You must convert picture manually!<br /><span style="color: red;">Warning!</span> Currently handled only by modified version of lozad.js'),
   );
     // process in tags
   $form['webpdrupal7_experimental']['avif']['webpdrupal7_avif_processon'] = array(
@@ -819,8 +819,6 @@ function webpdrupal7_import_handler($form, &$form_state) {
 
       }
 
-      //if ( substr($param, 0, 12) == 'webpdrupal7_'){
-      //}
     }
 
     return true;
@@ -893,47 +891,41 @@ function webpdrupal7_preprocess_html(&$head_elements){
     // avifdetect
     switch (intval(variable_get('webpdrupal7_avifdetect_load'))){
       case 0:
-        // Header, inline
-        drupal_add_js(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js'), array(
-          'type' => 'inline',
-          'scope' => 'header',
-          'weight' => 1,
-        ));
+
+        $avif_detect_js = [
+          '#tag' => 'script',
+          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js'),
+          '#attributes' => [
+            'id' => 'avif-detect',
+          ],
+          '#weight' => -100,
+        ];
+        drupal_add_html_head($avif_detect_js, 'avif_detect_js');
         break;
       case 1:
         // Header, external, blocking
-        // CDN support
-        if ($useCDN){
-          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('scope' => 'header', 'type' => 'external'));
-        } else {
-          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('scope' => 'header'));
-        }
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('scope' => 'header', 'type' => 'external', 'weight' => -100));
         break;
 
       case 2:
         // Header, async
         // async
-        $webp_detect_js = [
+        $avif_detect_js = [
           '#tag' => 'script',
           '#value' => '',
           '#attributes' => [
             'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js',
             'async' => "async",
           ],
+          '#weight' => -100,
         ];
-        drupal_add_html_head($webp_detect_js, 'webp_detect_js');
+        drupal_add_html_head($avif_detect_js, 'avif_detect_js');
 
         break;
 
       case 3:
         // Footer, defer
-
-        // CDN support
-        if ($useCDN){
-          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
-        } else {
-          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
-        }
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
         break;
 
       case 4:
@@ -943,21 +935,21 @@ function webpdrupal7_preprocess_html(&$head_elements){
     // webpdetect
     switch (intval(variable_get('webpdrupal7_webpdetect_asyncjs'))){
       case 0:
-        // Header, inline
-        drupal_add_js(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js'), array(
-          'type' => 'inline',
-          'scope' => 'header',
-          'weight' => 1,
-        ));
+
+        $webp_detect_js = [
+          '#tag' => 'script',
+          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js'),
+          '#attributes' => [
+            'id' => 'webp-detect',
+          ],
+          '#weight' => -90,
+        ];
+        drupal_add_html_head($webp_detect_js, 'webp_detect_js');
+
         break;
       case 1:
         // Header, external, blocking
-        // CDN support
-        if ($useCDN){
-          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('scope' => 'header', 'type' => 'external'));
-        } else {
-          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('scope' => 'header'));
-        }
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('scope' => 'header', 'type' => 'external', 'weight' => -100));
         break;
 
       case 2:
@@ -977,13 +969,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
       case 3:
         // Footer, defer
-
-        // CDN support
-        if ($useCDN){
-          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
-        } else {
-          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
-        }
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
         break;
 
       case 4:

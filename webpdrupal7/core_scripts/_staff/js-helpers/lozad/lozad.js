@@ -1,13 +1,251 @@
-/*! lozad.js - v1.16.0 - 2020-09-06
+/*! lozad.js - v1.16.0 - 2020-09-10
 * https://github.com/ApoorvSaxena/lozad.js
 * Copyright (c) 2020 Apoorv Saxena; Licensed MIT */
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):t.lozad=e()}(this,function(){"use strict";
-/**
-   * Detect IE browser
-   * @const {boolean}
-   * @private
-   */var g="undefined"!=typeof document&&document.documentMode,f={rootMargin:"0px",threshold:0,load:function(t){if("picture"===t.nodeName.toLowerCase()){var e=t.querySelector("img"),r=!1;null===e&&(e=document.createElement("img"),r=!0),g&&t.getAttribute("data-iesrc")&&(e.src=t.getAttribute("data-iesrc")),t.getAttribute("data-alt")&&(e.alt=t.getAttribute("data-alt")),r&&t.append(e)}if("video"===t.nodeName.toLowerCase()&&!t.getAttribute("data-src")&&t.children){for(var a=t.children,o=void 0,i=0;i<=a.length-1;i++)(o=a[i].getAttribute("data-src"))&&(a[i].src=o);t.load()}t.getAttribute("data-poster")&&(t.poster=t.getAttribute("data-poster")),t.getAttribute("data-src")&&(t.src=t.getAttribute("data-src")),t.getAttribute("data-srcset")&&t.setAttribute("srcset",t.getAttribute("data-srcset"));var n=",";if(t.getAttribute("data-background-delimiter")&&(n=t.getAttribute("data-background-delimiter")),t.getAttribute("data-background-image"))t.style.backgroundImage="url('"+t.getAttribute("data-background-image").split(n).join("'),url('")+"')";else if(t.getAttribute("data-background-image-set")){var d=t.getAttribute("data-background-image-set").split(n),u=d[0].substr(0,d[0].indexOf(" "))||d[0];// Substring before ... 1x
-u=-1===u.indexOf("url(")?"url("+u+")":u,1===d.length?t.style.backgroundImage=u:t.setAttribute("style",(t.getAttribute("style")||"")+"background-image: "+u+"; background-image: -webkit-image-set("+d+"); background-image: image-set("+d+")")}t.getAttribute("data-toggle-class")&&t.classList.toggle(t.getAttribute("data-toggle-class"))},loaded:function(){}};function A(t){t.setAttribute("data-loaded",!0)}var m=function(t){return"true"===t.getAttribute("data-loaded")},v=function(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:document;return t instanceof Element?[t]:t instanceof NodeList?t:e.querySelectorAll(t)};return function(){var r,a,o=0<arguments.length&&void 0!==arguments[0]?arguments[0]:".lozad",t=1<arguments.length&&void 0!==arguments[1]?arguments[1]:{},e=Object.assign({},f,t),i=e.root,n=e.rootMargin,d=e.threshold,u=e.load,g=e.loaded,s=void 0;"undefined"!=typeof window&&window.IntersectionObserver&&(s=new IntersectionObserver((r=u,a=g,function(t,e){t.forEach(function(t){(0<t.intersectionRatio||t.isIntersecting)&&(e.unobserve(t.target),m(t.target)||(r(t.target),A(t.target),a(t.target)))})}),{root:i,rootMargin:n,threshold:d}));for(var c,l=v(o,i),b=0;b<l.length;b++)(c=l[b]).getAttribute("data-placeholder-background")&&(c.style.background=c.getAttribute("data-placeholder-background"));return{observe:function(){for(var t=v(o,i),e=0;e<t.length;e++)m(t[e])||(s?s.observe(t[e]):(u(t[e]),A(t[e]),g(t[e])))},triggerLoad:function(t){m(t)||(u(t),A(t),g(t))},observer:s}}});
+
+/* Modified to use "data-avif"-attribute*/
+
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global.lozad = factory());
+  }(this, (function () { 'use strict';
+  
+    /**
+     * Detect IE browser
+     * @const {boolean}
+     * @private
+     */
+    var isIE = typeof document !== 'undefined' && document.documentMode;
+  
+    /**
+     *
+     * @param {string} type
+     *
+     */
+    var support = function support(type) {
+      return window && window[type];
+    };
+  
+    var validAttribute = ['data-iesrc', 'data-alt', 'data-src', 'data-srcset', 'data-background-image', 'data-toggle-class'];
+  
+    var defaultConfig = {
+      rootMargin: '0px',
+      threshold: 0,
+      enableAutoReload: false,
+      load: function load(element) {
+        
+        if ( (window.localStorage.getItem('avifsupp') == '1') && element.hasAttribute('data-avif')){
+          if (element.hasAttribute('srcset')){
+              element.setAttribute('srcset', element.getAttribute('data-avif'));
+          } else if (element.hasAttribute('src')){
+              element.src = element.getAttribute('data-avif');
+          } else if (el.hasAttribute('style')){
+              element.style.backgroundImage = 'url(\'' + element.getAttribute('data-avif') + '\')';
+          }
+
+          return true;
+        }
+
+        if (element.nodeName.toLowerCase() === 'picture') {
+          var img = element.querySelector('img');
+          var append = false;
+  
+          if (img === null) {
+            img = document.createElement('img');
+            append = true;
+          }
+  
+          if (isIE && element.getAttribute('data-iesrc')) {
+            img.src = element.getAttribute('data-iesrc');
+          }
+  
+          if (element.getAttribute('data-alt')) {
+            img.alt = element.getAttribute('data-alt');
+          }
+  
+          if (append) {
+            element.append(img);
+          }
+        }
+  
+        if (element.nodeName.toLowerCase() === 'video' && !element.getAttribute('data-src')) {
+          if (element.children) {
+            var childs = element.children;
+            var childSrc = void 0;
+            for (var i = 0; i <= childs.length - 1; i++) {
+              childSrc = childs[i].getAttribute('data-src');
+              if (childSrc) {
+                childs[i].src = childSrc;
+              }
+            }
+  
+            element.load();
+          }
+        }
+  
+        if (element.getAttribute('data-poster')) {
+          element.poster = element.getAttribute('data-poster');
+        }
+  
+        if (element.getAttribute('data-src')) {
+          element.src = element.getAttribute('data-src');
+        }
+  
+        if (element.getAttribute('data-srcset')) {
+          element.setAttribute('srcset', element.getAttribute('data-srcset'));
+        }
+  
+        var backgroundImageDelimiter = ',';
+        if (element.getAttribute('data-background-delimiter')) {
+          backgroundImageDelimiter = element.getAttribute('data-background-delimiter');
+        }
+  
+        if (element.getAttribute('data-background-image')) {
+          element.style.backgroundImage = 'url(\'' + element.getAttribute('data-background-image').split(backgroundImageDelimiter).join('\'),url(\'') + '\')';
+        } else if (element.getAttribute('data-background-image-set')) {
+          var imageSetLinks = element.getAttribute('data-background-image-set').split(backgroundImageDelimiter);
+          var firstUrlLink = imageSetLinks[0].substr(0, imageSetLinks[0].indexOf(' ')) || imageSetLinks[0]; // Substring before ... 1x
+          firstUrlLink = firstUrlLink.indexOf('url(') === -1 ? 'url(' + firstUrlLink + ')' : firstUrlLink;
+          if (imageSetLinks.length === 1) {
+            element.style.backgroundImage = firstUrlLink;
+          } else {
+            element.setAttribute('style', (element.getAttribute('style') || '') + ('background-image: ' + firstUrlLink + '; background-image: -webkit-image-set(' + imageSetLinks + '); background-image: image-set(' + imageSetLinks + ')'));
+          }
+        }
+  
+        if (element.getAttribute('data-toggle-class')) {
+          element.classList.toggle(element.getAttribute('data-toggle-class'));
+        }
+      },
+      loaded: function loaded() {}
+    };
+  
+    function markAsLoaded(element) {
+      element.setAttribute('data-loaded', true);
+    }
+  
+    function preLoad(element) {
+      if (element.getAttribute('data-placeholder-background')) {
+        element.style.background = element.getAttribute('data-placeholder-background');
+      }
+    }
+  
+    var isLoaded = function isLoaded(element) {
+      return element.getAttribute('data-loaded') === 'true';
+    };
+  
+    var onIntersection = function onIntersection(load, loaded) {
+      return function (entries, observer) {
+        entries.forEach(function (entry) {
+          if (entry.intersectionRatio > 0 || entry.isIntersecting) {
+            observer.unobserve(entry.target);
+  
+            if (!isLoaded(entry.target)) {
+              load(entry.target);
+              markAsLoaded(entry.target);
+              loaded(entry.target);
+            }
+          }
+        });
+      };
+    };
+  
+    var onMutation = function onMutation(load) {
+      return function (entries) {
+        entries.forEach(function (entry) {
+          if (isLoaded(entry.target) && entry.type === 'attributes' && validAttribute.indexOf(entry.attributeName) > -1) {
+            load(entry.target);
+          }
+        });
+      };
+    };
+  
+    var getElements = function getElements(selector) {
+      var root = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
+  
+      if (selector instanceof Element) {
+        return [selector];
+      }
+  
+      if (selector instanceof NodeList) {
+        return selector;
+      }
+  
+      return root.querySelectorAll(selector);
+    };
+  
+    function lozad () {
+      var selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '.lozad';
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  
+      var _Object$assign = Object.assign({}, defaultConfig, options),
+          root = _Object$assign.root,
+          rootMargin = _Object$assign.rootMargin,
+          threshold = _Object$assign.threshold,
+          enableAutoReload = _Object$assign.enableAutoReload,
+          load = _Object$assign.load,
+          loaded = _Object$assign.loaded;
+  
+      var observer = void 0;
+      var mutationObserver = void 0;
+      if (support('IntersectionObserver')) {
+        observer = new IntersectionObserver(onIntersection(load, loaded), {
+          root: root,
+          rootMargin: rootMargin,
+          threshold: threshold
+        });
+      }
+  
+      if (support('MutationObserver') && enableAutoReload) {
+        mutationObserver = new MutationObserver(onMutation(load, loaded));
+      }
+  
+      var elements = getElements(selector, root);
+      for (var i = 0; i < elements.length; i++) {
+        preLoad(elements[i]);
+      }
+  
+      return {
+        observe: function observe() {
+          var elements = getElements(selector, root);
+  
+          for (var _i = 0; _i < elements.length; _i++) {
+            if (isLoaded(elements[_i])) {
+              continue;
+            }
+  
+            if (observer) {
+              if (mutationObserver && enableAutoReload) {
+                mutationObserver.observe(elements[_i], { subtree: true, attributes: true, attributeFilter: validAttribute });
+              }
+  
+              observer.observe(elements[_i]);
+              continue;
+            }
+  
+            load(elements[_i]);
+            markAsLoaded(elements[_i]);
+            loaded(elements[_i]);
+          }
+        },
+        triggerLoad: function triggerLoad(element) {
+          if (isLoaded(element)) {
+            return;
+          }
+  
+          load(element);
+          markAsLoaded(element);
+          loaded(element);
+        },
+  
+        observer: observer,
+        mutationObserver: mutationObserver
+      };
+    }
+  
+    return lozad;
+  
+  })));
 
 !function(){function n(){
     var observer = lozad('.lazyload', {
