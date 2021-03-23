@@ -1443,11 +1443,10 @@ function modifyImagesWebp($output, $params = false){
 	// ! если при проходе lazy мы натыкаемся на имеющийся атрибут srcset, его надо переместить в data-srcset
 	// иначе тупо перепишем его инлайновой заглушкой, а там мог быть webp
 
-	// Шаг 1. Проходим webp
-	process_webp($document, $params);
-
-	// Шаг 1.1. Проходим avif до lazyload
+	// Шаг 1. Проходим avif и webp
+	// сначала avif, т.к. здесь мы не переписываем например оригинальный атрибут style, и не мешаем детекту оригинального пути
 	process_avif($document, $params);
+	process_webp($document, $params);
 
 	// Шаг 2. Проходим LazyLoading
 	process_lazy($document, $params);

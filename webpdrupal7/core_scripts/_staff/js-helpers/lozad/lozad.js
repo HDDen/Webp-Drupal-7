@@ -39,7 +39,7 @@
               element.setAttribute('srcset', element.getAttribute('data-avif'));
           } else if (element.hasAttribute('src')){
               element.src = element.getAttribute('data-avif');
-          } else if (el.hasAttribute('style')){
+          } else if (element.hasAttribute('style')){
               element.style.backgroundImage = 'url(\'' + element.getAttribute('data-avif') + '\')';
           }
 
