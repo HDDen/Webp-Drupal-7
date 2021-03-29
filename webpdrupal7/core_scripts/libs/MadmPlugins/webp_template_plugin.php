@@ -173,8 +173,15 @@ function convertWebpDem($source = false, $destination = false, $reconvert = fals
                 'api-url' => '', //https://example.com/webp-cloud/wpc.php',
                 'api-version' => 1,
             ],
+            /*'cwebp' => [
+                //'command-line-options' => '-sharp_yuv',
+                //'try-common-system-paths' => false,
+                //'cwebp-try-cwebp' => false,
+                //'try-discovering-cwebp' => false,
+            ],*/
         ],
     );
+
     // overriding options based on drupal module values
     // global quality
     if (defined('WEBP_QUALITY') && WEBP_QUALITY){
@@ -212,7 +219,12 @@ function convertWebpDem($source = false, $destination = false, $reconvert = fals
 
     // precompiled options
     if (defined('WEBP_TRY_PRECOMPILED')){
-    	if (WEBP_TRY_PRECOMPILED){
+    	if (WEBP_TRY_PRECOMPILED === 'force'){
+            $options['cwebp-try-supplied-binary-for-os'] = true;
+            $options['converter-options']['cwebp']['try-common-system-paths'] = false;
+            $options['converter-options']['cwebp']['cwebp-try-cwebp'] = false;
+            $options['converter-options']['cwebp']['try-discovering-cwebp'] = false;
+        } else if (WEBP_TRY_PRECOMPILED){
     		$options['cwebp-try-supplied-binary-for-os'] = true;
     	} else {
     		$options['cwebp-try-supplied-binary-for-os'] = false;
@@ -220,6 +232,11 @@ function convertWebpDem($source = false, $destination = false, $reconvert = fals
     }
     if (defined('WEBP_PRECOMPILED_PATH') && WEBP_PRECOMPILED_PATH){
         $options['cwebp-rel-path-to-precompiled-binaries'] = WEBP_PRECOMPILED_PATH;
+    }
+
+    // custom cwebp commandline
+    if (defined('WEBP_CWEBP_COMMAND') && WEBP_CWEBP_COMMAND){
+        $options['converter-options']['cwebp']['command-line-options'] = WEBP_CWEBP_COMMAND;
     }
 
     // debug options

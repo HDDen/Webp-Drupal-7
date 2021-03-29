@@ -47,14 +47,17 @@ WebPConvert::serveConverted($source, $destination, [
         ],
         'encoding' => 'lossy',
 
-        /*'converter-options' => [
-            'wpc' => [
+        'converter-options' => [
+            /*'wpc' => [
                 'crypt-api-key-in-transfer' => false,
                 'api-key' => 'use-any-phrase',
                 'api-url' => 'https://example.com/other-includ/webp-cloud/wpc.php',
                 'api-version' => 1,
-            ],
-        ],*/
+            ],*/
+            /*'cwebp' => [
+                'command-line-options' => '-sharp_yuv',
+            ],*/
+        ],
     ],
 
     //'reconvert' => true,

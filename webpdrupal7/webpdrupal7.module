@@ -278,6 +278,7 @@ function webpdrupal7_form($form, &$form_state) {
     '#options' => array(
       0 => t('No'),
       1 => t('Yes'),
+      2 => t('Use instead of regular'),
     ),
     '#default_value' => variable_get('webpdrupal7_webp_try_binaries', 0),
     '#description' => t('If your server havent built-in webp-converters, you can try compiled binaries from rosell-dk packet.'),
@@ -286,8 +287,16 @@ function webpdrupal7_form($form, &$form_state) {
   $form['webpdrupal7_webp']['converter']['precompiled']['webpdrupal7_webp_precompiled_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Precompiled cwebp-binaries are stored in:'),
-    '#default_value' => variable_get('webpdrupal7_webp_precompiled_path', drupal_get_path('module', 'webpdrupal7').'/core_scripts/libs/WebpConvert/vendor/rosell-dk/webp-convert/src/Convert/Converters/Binaries'),
-    '#description' => t('Empty or "sites/all/modules/webpdrupal7/core_scripts"-like path'),
+    '#default_value' => variable_get('webpdrupal7_webp_precompiled_path', ''),
+    '#description' => t('Empty or "sites/all/modules/webpdrupal7/core_scripts"-like path. Warning! This is buggy: '.drupal_get_path('module', 'webpdrupal7').'/core_scripts/libs/WebpConvert/vendor/rosell-dk/webp-convert/src/Convert/Converters/Binaries'),
+    '#maxlength' => 255,
+  );
+    // cwebp custom command-line
+  $form['webpdrupal7_webp']['converter']['precompiled']['webpdrupal7_webp_cwebp_parameters'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CLI-parameters:'),
+    '#default_value' => variable_get('webpdrupal7_webp_cwebp_parameters', ''),
+    '#description' => t('-sharp_yuv'),
     '#maxlength' => 255,
   );
 
@@ -693,6 +702,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_wpc_url',
     'webpdrupal7_webp_try_binaries',
     'webpdrupal7_webp_precompiled_path',
+    'webpdrupal7_webp_cwebp_parameters',
     'webpdrupal7_webp_reconvert_bydate',
     'webpdrupal7_webp_customlocation',
     'webpdrupal7_lazy_imgprocess',
@@ -1381,19 +1391,26 @@ function webpdrupal7_process_html(&$variables) {
         }
 
           // precompiled binaries
-        $try_precompiled = variable_get('webpdrupal7_webp_try_binaries');
+        $try_precompiled = intval(variable_get('webpdrupal7_webp_try_binaries'));
         if (!defined('WEBP_TRY_PRECOMPILED')){
-          if ($try_precompiled){
+          if ($try_precompiled == 2){
+            define('WEBP_TRY_PRECOMPILED', 'force');
+          } else if ($try_precompiled == 1){
             define('WEBP_TRY_PRECOMPILED', true);
           } else {
             define('WEBP_TRY_PRECOMPILED', false);
           }
         }
-          // path for seraching precompiled
+          // path for searching precompiled
         $webp_precompiled_path = variable_get('webpdrupal7_webp_precompiled_path');
         if ($webp_precompiled_path != ''){
           $webp_precompiled_path = DRUPAL_ROOT.'/'.trim($webp_precompiled_path, '/');
           define('WEBP_PRECOMPILED_PATH', $webp_precompiled_path);
+        }
+          // cwebp custom commandline
+        $webp_cwebpcommandline = variable_get('webpdrupal7_webp_cwebp_parameters');
+        if ($webp_cwebpcommandline != ''){
+          define('WEBP_CWEBP_COMMAND', $webp_cwebpcommandline);
         }
 
           // reconverting based on timestamp
