@@ -1223,6 +1223,10 @@ function webpdrupal7_process_html(&$variables) {
             'ignore_webp_on' => false, // false or comma-separated css-selectors
             'force' => false, // force pushing webp-version
             'store_converted_in' => false, // false or relative path, which will be added to orig path structure
+            'quality' => 86,
+            'jpeg_quality' => 'auto', // auto / number
+            'jpeg_max_quality' => 95,
+            'jpeg_defaultquality' => 86,
             'cwebp' => array(
               'commandline_options' => false, // false / string. Can add '-sharp_yuv', for example
               'cwebp_try_precompiled' => true, // try precompiled cwebp-binaries, if isnt operable in system
@@ -1231,6 +1235,11 @@ function webpdrupal7_process_html(&$variables) {
               'try_cwebp_call' => true, // true / false. Try to execute plain 'cwebp'-command
               'try_whereis' => true, // true / false. Try to search cwebp by 'whereis'-command
               'relative_path' => false, // false / string. Custom relative path to binaries of cwebp from Cwebp.php
+            ),
+            'wpc' => array(
+              'crypt_key' => false,
+              'key' => '',
+              'url' => '',
             ),
           ),
           'avif' => array(
@@ -1351,52 +1360,38 @@ function webpdrupal7_process_html(&$variables) {
           // quality
         $webpdrupal7_webp_quality = variable_get('webpdrupal7_webp_quality');
         if ($webpdrupal7_webp_quality){
-          if (!defined('WEBP_QUALITY')){
-            define('WEBP_QUALITY', $webpdrupal7_webp_quality);
-          }
+          $params['webp']['quality'] = $webpdrupal7_webp_quality;
         }
           // jpeg quality - auto/number
         $webpdrupal7_webp_jpeg_quality = variable_get('webpdrupal7_webp_jpeg_quality');
         if ($webpdrupal7_webp_jpeg_quality){
-          if (!defined('WEBP_JPEG_QUALITY')){
-            define('WEBP_JPEG_QUALITY', $webpdrupal7_webp_jpeg_quality);
-          }
+          $params['webp']['jpeg_quality'] = $webpdrupal7_webp_jpeg_quality;
         }
           // jpeg max quality
         $webpdrupal7_webp_jpeg_maxquality = variable_get('webpdrupal7_webp_jpeg_maxquality');
         if ($webpdrupal7_webp_jpeg_maxquality){
-          if (!defined('WEBP_JPEG_MAXQUALITY')){
-            define('WEBP_JPEG_MAXQUALITY', $webpdrupal7_webp_jpeg_maxquality);
-          }
+          $params['webp']['jpeg_max_quality'] = $webpdrupal7_webp_jpeg_maxquality;
         }
           // jpeg default (fallback) quality
         $webpdrupal7_webp_jpeg_defquality = variable_get('webpdrupal7_webp_jpeg_defquality');
         if ($webpdrupal7_webp_jpeg_defquality){
-          if (!defined('WEBP_JPEG_DEFQUALITY')){
-            define('WEBP_JPEG_DEFQUALITY', $webpdrupal7_webp_jpeg_defquality);
-          }
+          $params['webp']['jpeg_defaultquality'] = $webpdrupal7_webp_jpeg_defquality;
         }
 
         // wpc
           // wpc crypt
         if (variable_get('webpdrupal7_wpc_crypt')){
-          if (!defined('WEBP_WPC_CRYPT')){
-            define('WEBP_WPC_CRYPT', true);
-          }
+          $params['webp']['wpc']['crypt_key'] = true;
         }
           // wpc key
         $wpc_key = variable_get('webpdrupal7_wpc_key');
         if ($wpc_key){
-          if (!defined('WEBP_WPC_KEY')){
-            define('WEBP_WPC_KEY', $wpc_key);
-          }
+          $params['webp']['wpc']['key'] = $wpc_key;
         }
           // wpc url
         $wpc_url = variable_get('webpdrupal7_wpc_url');
         if ($wpc_url){
-          if (!defined('WEBP_WPC_URL')){
-            define('WEBP_WPC_URL', $wpc_url);
-          }
+          $params['webp']['wpc']['url'] = $wpc_url;
         }
           // precompiled binaries
         $try_precompiled = intval(variable_get('webpdrupal7_webp_try_binaries'));
@@ -1416,7 +1411,7 @@ function webpdrupal7_process_html(&$variables) {
         }
           // cwebp custom commandline
         $webp_cwebpcommandline = variable_get('webpdrupal7_webp_cwebp_parameters');
-        if ($webp_cwebpcommandline != ''){
+        if ($webp_cwebpcommandline){
           $params['webp']['cwebp']['commandline_options'] = $webp_cwebpcommandline;
         }
 

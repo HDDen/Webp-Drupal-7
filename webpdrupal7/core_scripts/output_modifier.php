@@ -222,6 +222,10 @@ function mix_params($params = false){
 			'ignore_webp_on' => false, // false or comma-separated css-selectors
 			'force' => false, // force pushing webp-version
 			'store_converted_in' => false, // false or relative path, which will be added to orig path structure
+			'quality' => 86,
+			'jpeg_quality' => 'auto', // auto / integer
+			'jpeg_max_quality' => 95,
+			'jpeg_defaultquality' => 86,
 			'cwebp' => array(
 				'commandline_options' => false, // false / string. Can add '-sharp_yuv', for example
 				'cwebp_try_precompiled' => true, // try precompiled cwebp-binaries, if isnt operable in system
@@ -230,6 +234,11 @@ function mix_params($params = false){
 				'try_cwebp_call' => true, // true / false. Try to execute plain 'cwebp'-command
 				'try_whereis' => true, // true / false. Try to search cwebp by 'whereis'-command
 				'relative_path' => false, // false / string. Custom relative path to binaries of cwebp from Cwebp.php
+			),
+			'wpc' => array(
+				'crypt_key' => false,
+				'key' => '',
+				'url' => '',
 			),
 		),
 		'avif' => array(
@@ -418,7 +427,43 @@ function process_webp($document, &$params = false){
 			$webp_precompiled_path = $home_dir.'/'.trim($params['webp']['cwebp']['relative_path'], '/');
 			define('WEBP_PRECOMPILED_PATH', $webp_precompiled_path);
 		}
-	}		
+	}
+		// overall quality
+	if (!defined('WEBP_QUALITY')){
+		$webpdrupal7_webp_quality = intval($params['webp']['quality']);
+		define('WEBP_QUALITY', $webpdrupal7_webp_quality);
+	}
+		// jpeg-specific quality. Number or auto
+	if (!defined('WEBP_JPEG_QUALITY')){
+		$webpdrupal7_webp_jpeg_quality = $params['webp']['jpeg_quality'];
+		if ($webpdrupal7_webp_jpeg_quality != 'auto'){
+			$webpdrupal7_webp_jpeg_quality = intval($webpdrupal7_webp_jpeg_quality);
+		}
+		define('WEBP_JPEG_QUALITY', $webpdrupal7_webp_jpeg_quality);
+	}
+		// jpeg max-quality (if WEBP_JPEG_QUALITY = auto)
+	if (!defined('WEBP_JPEG_MAXQUALITY')){
+		$webpdrupal7_webp_jpeg_maxquality = intval($params['webp']['jpeg_max_quality']);
+		define('WEBP_JPEG_MAXQUALITY', $webpdrupal7_webp_jpeg_maxquality);
+	}
+		// jpeg fallback quality
+	if (!defined('WEBP_JPEG_DEFQUALITY')){
+		$webpdrupal7_webp_jpeg_defquality = intval($params['webp']['jpeg_defaultquality']);
+		define('WEBP_JPEG_DEFQUALITY', $webpdrupal7_webp_jpeg_defquality);
+	}
+	// wpc
+		// crypt key
+	if (!defined('WEBP_WPC_CRYPT')){
+		define('WEBP_WPC_CRYPT', $params['webp']['wpc']['crypt_key']);
+	}
+		// key
+	if (!defined('WEBP_WPC_KEY')){
+		define('WEBP_WPC_KEY', $params['webp']['wpc']['key']);
+	}
+		// url
+	if (!defined('WEBP_WPC_URL')){
+		define('WEBP_WPC_URL', $params['webp']['wpc']['url']);
+	}
 
 	// начинаем обработку
 	foreach ($process_on as $elem){
