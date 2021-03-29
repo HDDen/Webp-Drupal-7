@@ -324,6 +324,8 @@ function process_webp($document, &$params = false){
 		writeLog('process_webp(): Зашли в функцию');
 	}
 
+	$home_dir = get_homedir();
+
 	// Собираем массив селекторов для webp, получаем элементы DOM, и по очереди обрабатываем их
 
 	if (!$params){
@@ -404,11 +406,19 @@ function process_webp($document, &$params = false){
 	} else {
 		define('WEBP_TRY_PRECOMPILED', false);
 	}
+		// commandline
 	if ($params['webp']['cwebp']['commandline_options']){
 		if (!defined('WEBP_CWEBP_COMMAND')){
 			define('WEBP_CWEBP_COMMAND', $params['webp']['cwebp']['commandline_options']);
 		}
 	}
+		// path for searching precompiled
+	if ($params['webp']['cwebp']['relative_path']){
+		if (!defined('WEBP_PRECOMPILED_PATH')){
+			$webp_precompiled_path = $home_dir.'/'.trim($params['webp']['cwebp']['relative_path'], '/');
+			define('WEBP_PRECOMPILED_PATH', $webp_precompiled_path);
+		}
+	}		
 
 	// начинаем обработку
 	foreach ($process_on as $elem){
