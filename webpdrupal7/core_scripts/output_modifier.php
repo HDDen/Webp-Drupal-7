@@ -222,6 +222,15 @@ function mix_params($params = false){
 			'ignore_webp_on' => false, // false or comma-separated css-selectors
 			'force' => false, // force pushing webp-version
 			'store_converted_in' => false, // false or relative path, which will be added to orig path structure
+			'cwebp' => array(
+				'commandline_options' => false, // false / string. Can add '-sharp_yuv', for example
+				'cwebp_try_precompiled' => true, // try precompiled cwebp-binaries, if isnt operable in system
+				'cwebp_use_precompiled_as_main' => false, // true or false. True disables using system version of cwebp
+				'search_in_common_paths' => true, // true / false. Try to search cwebp in common paths (e.g. /home/user) 
+				'try_cwebp_call' => true, // true / false. Try to execute plain 'cwebp'-command
+				'try_whereis' => true, // true / false. Try to search cwebp by 'whereis'-command
+				'relative_path' => false, // false / string. Custom relative path to binaries of cwebp from Cwebp.php
+			),
 		),
 		'avif' => array(
 			'enabled' => false, // search and store avif-version
@@ -379,6 +388,25 @@ function process_webp($document, &$params = false){
 			}
 
 			define('WEBP_FORCE_CONVERSION', true);
+		}
+	}
+
+	// определяем параметры для конвертеров
+	// cwebp
+	if ($params['webp']['cwebp']['cwebp_try_precompiled']){
+		if (!defined('WEBP_TRY_PRECOMPILED')){
+			if ($params['webp']['cwebp']['cwebp_use_precompiled_as_main']){
+				define('WEBP_TRY_PRECOMPILED', 'force');
+			} else {
+				define('WEBP_TRY_PRECOMPILED', true);
+			}
+		}
+	} else {
+		define('WEBP_TRY_PRECOMPILED', false);
+	}
+	if ($params['webp']['cwebp']['commandline_options']){
+		if (!defined('WEBP_CWEBP_COMMAND')){
+			define('WEBP_CWEBP_COMMAND', $params['webp']['cwebp']['commandline_options']);
 		}
 	}
 

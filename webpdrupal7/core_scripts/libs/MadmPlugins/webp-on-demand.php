@@ -55,7 +55,10 @@ WebPConvert::serveConverted($source, $destination, [
                 'api-version' => 1,
             ],*/
             /*'cwebp' => [
-                'command-line-options' => '-sharp_yuv',
+                //'command-line-options' => '-sharp_yuv',
+                //'try-common-system-paths' => false,
+                //'cwebp-try-cwebp' => false,
+                //'try-discovering-cwebp' => false,
             ],*/
         ],
     ],
