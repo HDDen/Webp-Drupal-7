@@ -7,8 +7,7 @@ define('HOMEDIR', ''); // домашняя папка сайта ( /var/site.com
 if (function_exists('variable_get')){
 	$webpproject_path = variable_get('webpdrupal7_processor_path');
 	$webpproject_path = trim($webpproject_path, '');
-}
-if ($webpproject_path == ''){
+} else {
 	$webpproject_path = trim($webp_core_fallback_location, '/');
 }
 define('WEBPPROJECT', $webpproject_path); // папка проекта, от домашней папки сайта
@@ -290,6 +289,7 @@ function mix_params($params = false){
 			'external' => false, // false/true for abspaths/subdomains
 			'base_host' => false, // false or base domain like 'example.co.uk'
 		),
+		'strip_html' => false, // return whole <html> document or only <body> inner
 		'ignore_lazy' => false, // selectors for ignoring lazyload. In fact, these elems will be lazied, then unlazied :-/
 		'add_chromelazy_img' => false, // add loading="lazy" attr to img, false or attr value (auto|lazy|eager)
 		'caching' => false, // opt for enabling/disabling caching
@@ -1499,17 +1499,18 @@ function modifyImagesWebp($output, $params = false){
 
 	// flag for detecting $output is contained <html> tag
 	// if not, before returning we will remove generated <html><body> tags
-	$moddedhtml_startpart = substr($moddedhtml, 0, 20);
-	if (stristr($moddedhtml_startpart, '<html>')){
-		if (WEBP_DEBUGMODE){
-			writeLog('Получили $outut с тегом <html>');
+	if ($params['strip_html']){
+		$moddedhtml_startpart = substr($moddedhtml, 0, 32);
+		if (stristr($moddedhtml_startpart, '<html')){
+			if (WEBP_DEBUGMODE){
+				writeLog('Получили $outut с тегом <html>');
+			}
+			$received_html_tag = true;
+		} else {
+			$received_html_tag = false;
 		}
-		$received_html_tag = true;
-	} else {
-		$received_html_tag = false;
+		unset($moddedhtml_startpart);
 	}
-	unset($moddedhtml_startpart);
-
 
 	// Воюем с кодировкой (по необходимости)
 	//$moddedhtml = mb_convert_encoding($moddedhtml, 'HTML-ENTITIES', 'UTF-8');
@@ -1543,10 +1544,18 @@ function modifyImagesWebp($output, $params = false){
 	do_additional_hardcoded_operations($document, $params);
 
 	// return processed
-	if ($received_html_tag){
-		$moddedhtml = $document->html(); // if originally passed with an attribute
+
+	// check, strip html or not
+	if (isset($received_html_tag) && $received_html_tag && $params['strip_html']){
+		if (WEBP_DEBUGMODE){
+			writeLog('Включено удаление <html>, вёрнём body->innerHTML');
+		}
+		$moddedhtml = $document->first('body')->innerHtml();
 	} else {
-		$moddedhtml = $document->first('body')->innerHtml(); // if without
+		if (WEBP_DEBUGMODE){
+			writeLog('Возвращаем весь $document->html()');
+		}
+		$moddedhtml = $document->html();
 	}
 
 	// Воюем с кодировкой

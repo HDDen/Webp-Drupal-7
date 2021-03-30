@@ -1,7 +1,18 @@
 Скрипты из этой папки допускается использовать вне друпала, т.к. модуль - лишь интерфейс для настройки.
 
 Возможен запуск только с html-разметкой, без опций. Подтянутся дефолтные.
-$modified_output = modifyImagesWebp($html_code);
+Пример:
+
+// webp
+ob_start();
+// <html>...</html>
+$modified_output = ob_get_clean();
+include_once $_SERVER['DOCUMENT_ROOT'] . '/php/webp/output_modifier.php';
+if (function_exists('modifyImagesWebp')){
+  $modified_output = modifyImagesWebp($html_code);
+}
+echo $modified_output;
+// end webp
 
 Если используем lazyload, нужно подключить к сайту библиотеку lazysizes (_staff/js-helpers/lazysizes)
 
