@@ -9,7 +9,7 @@ ob_start();
 $modified_output = ob_get_clean();
 include_once $_SERVER['DOCUMENT_ROOT'] . '/php/webp/output_modifier.php';
 if (function_exists('modifyImagesWebp')){
-  $modified_output = modifyImagesWebp($html_code);
+  $modified_output = modifyImagesWebp($modified_output);
 }
 echo $modified_output;
 // end webp

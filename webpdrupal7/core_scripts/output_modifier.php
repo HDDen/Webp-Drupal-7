@@ -229,9 +229,6 @@ function mix_params($params = false){
 				'commandline_options' => false, // false / string. Can add '-sharp_yuv', for example
 				'cwebp_try_precompiled' => true, // try precompiled cwebp-binaries, if isnt operable in system
 				'cwebp_use_precompiled_as_main' => false, // true or false. True disables using system version of cwebp
-				'search_in_common_paths' => true, // true / false. Try to search cwebp in common paths (e.g. /home/user) 
-				'try_cwebp_call' => true, // true / false. Try to execute plain 'cwebp'-command
-				'try_whereis' => true, // true / false. Try to search cwebp by 'whereis'-command
 				'relative_path' => false, // false / string. Custom relative path to binaries of cwebp from Cwebp.php
 			),
 			'wpc' => array(
