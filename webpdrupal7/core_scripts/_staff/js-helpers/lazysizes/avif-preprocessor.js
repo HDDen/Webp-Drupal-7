@@ -14,6 +14,8 @@ if (window.localStorage.getItem('avifsupp') == '1'){
                     attr = 'data-src';
                 } else if (el.hasAttribute('data-bg')){
                     attr = 'data-bg';
+                } else if (el.hasAttribute('data-poster')){
+                    attr = 'data-poster';
                 }
 
                 avifs[i].setAttribute(attr, avif);

@@ -652,6 +652,15 @@ function process_avif_once($elem, &$params){
 			}
 		}
 		
+	} else if ($tagname == 'video') {
+		// парсим poster
+		if ($elem->hasAttribute('poster')){
+			$poster = $elem->getAttribute('poster');
+			$relative_uri = getRelativeUri($poster, $home_dir); // false or path
+			if ($relative_uri){
+				$patch_to_check = $home_dir . $custom_path_prefix . $relative_uri . '.avif';
+			}
+		}
 	} else {
 		// нужно парсить из стиля
 		if ($elem->hasAttribute('style')){

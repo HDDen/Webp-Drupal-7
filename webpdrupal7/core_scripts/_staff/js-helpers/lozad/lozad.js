@@ -41,6 +41,8 @@
               element.src = element.getAttribute('data-avif');
           } else if (element.hasAttribute('style')){
               element.style.backgroundImage = 'url(\'' + element.getAttribute('data-avif') + '\')';
+          } else if (element.hasAttribute('data-poster')){
+              element.setAttribute('poster', element.getAttribute('data-avif'));
           }
 
           return true;
@@ -248,15 +250,15 @@
   })));
 
 !function(){function n(){
-    var observer = lozad('.lazyload', {
-	    rootMargin: '200px 0px', // syntax similar to that of CSS Margin
-	    threshold: 0.1, // ratio of element convergence
-	    enableAutoReload: false, // it will reload the new image when validating attributes changes
+  var observer = lozad('.lazyload', {
+    rootMargin: '200px 0px', // syntax similar to that of CSS Margin
+    threshold: 0.1, // ratio of element convergence
+    enableAutoReload: false, // it will reload the new image when validating attributes changes
 
-	    loaded: function(el) {
-	        el.classList.remove('lazyload');
-	        el.classList.add('lazyloaded');
-	    }
+    loaded: function(el) {
+        el.classList.remove('lazyload');
+        el.classList.add('lazyloaded');
+    }
 	});
 	observer.observe();
 }"loading"!=document.readyState?n():document.addEventListener("DOMContentLoaded",function(){n()})}();
