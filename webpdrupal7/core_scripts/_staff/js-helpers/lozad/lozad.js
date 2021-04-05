@@ -35,17 +35,23 @@
       load: function load(element) {
         
         if ( (window.localStorage.getItem('avifsupp') == '1') && element.hasAttribute('data-avif')){
-          if (element.hasAttribute('srcset')){
-              element.setAttribute('srcset', element.getAttribute('data-avif'));
-          } else if (element.hasAttribute('src')){
-              element.src = element.getAttribute('data-avif');
-          } else if (element.hasAttribute('style')){
-              element.style.backgroundImage = 'url(\'' + element.getAttribute('data-avif') + '\')';
-          } else if (element.hasAttribute('data-poster')){
-              element.setAttribute('poster', element.getAttribute('data-avif'));
-          }
 
-          return true;
+          // if video, dont interrupt, because we must process child sources elements
+          if (element.hasAttribute('data-poster')){
+
+            element.setAttribute('data-poster', element.getAttribute('data-avif'));
+          
+          } else {
+            if (element.hasAttribute('srcset')){
+              element.setAttribute('srcset', element.getAttribute('data-avif'));
+            } else if (element.hasAttribute('src')){
+                element.src = element.getAttribute('data-avif');
+            } else if (element.hasAttribute('style')){
+                element.style.backgroundImage = 'url(\'' + element.getAttribute('data-avif') + '\')';
+            }
+
+            return true;
+          }
         }
 
         if (element.nodeName.toLowerCase() === 'picture') {

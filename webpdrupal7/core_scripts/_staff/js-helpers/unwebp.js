@@ -19,7 +19,7 @@
 			}
 		}
 
-		var bgAttrs = ['data-background-image', 'data-bg', 'style'];
+		var bgAttrs = ['data-background-image', 'data-bg', 'style', 'data-poster', 'poster'];
 		for (var i = 0; i < bgAttrs.length; i++){
 			var els = document.querySelectorAll('*['+bgAttrs[i]+'*=".webp"]');
 			if (els.length){

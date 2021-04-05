@@ -554,6 +554,12 @@ function process_webp($document, &$params = false){
 				if ($params['fallback_alt']){
 					add_fallback_alt($elem, $params);	
 				}
+			} else if ($tagname == 'video') {
+				if ($cdn_webp_version){
+					$elem->setAttribute('poster', $cdn_webp_version);
+				} else {
+					$elem->setAttribute('poster', $webp_version);
+				}
 			} else {
 				// если не img, то только в style, задав background-image
 				// заменим через str_replace в инлайновом стиле
@@ -851,6 +857,7 @@ function process_lazyload_once($elem, &$params){
 				// пока работаем с постером. Селектор sources задаем отдельно, как video sources
 				$video_poster_src = $elem->getAttribute('poster');
 				if (!is_null($video_poster_src)){
+					//$elem->setAttribute('poster', '');
 					$elem->removeAttribute('poster');
 					$elem->setAttribute('data-poster', $video_poster_src);
 				}
@@ -1042,6 +1049,10 @@ function generate_webp($elem, $filter_by_specific_extensions = false, $custom_pa
 	$src = false;
 	if ($tagname == 'img'){
 		$src = $elem->getAttribute('src');
+		//remove get-parameters (?itok, for example)
+		$src = strtok($src, '?');
+	} else if ($tagname == 'video') {
+		$src = $elem->getAttribute('poster');
 		//remove get-parameters (?itok, for example)
 		$src = strtok($src, '?');
 	} else {
