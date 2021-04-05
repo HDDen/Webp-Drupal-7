@@ -1496,7 +1496,13 @@ function modifyImagesWebp($output, $params = false){
 
 	// flag for detecting $output is contained <html> tag
 	// if not, before returning we will remove generated <html><body> tags
+	if (WEBP_DEBUGMODE){
+		writeLog('Проверка, подрезаем ли html');
+	}
 	if ($params['strip_html']){
+		if (WEBP_DEBUGMODE){
+			writeLog('Подрезка включена');
+		}
 		$moddedhtml_startpart = substr($moddedhtml, 0, 32);
 		if (stristr($moddedhtml_startpart, '<html')){
 			if (WEBP_DEBUGMODE){
@@ -1504,6 +1510,9 @@ function modifyImagesWebp($output, $params = false){
 			}
 			$received_html_tag = true;
 		} else {
+			if (WEBP_DEBUGMODE){
+				writeLog('Мы получали строку без <html>');
+			}
 			$received_html_tag = false;
 		}
 		unset($moddedhtml_startpart);
@@ -1543,16 +1552,28 @@ function modifyImagesWebp($output, $params = false){
 	// return processed
 
 	// check, strip html or not
-	if (isset($received_html_tag) && $received_html_tag && $params['strip_html']){
+	if (isset($received_html_tag) && $received_html_tag){
 		if (WEBP_DEBUGMODE){
-			writeLog('Включено удаление <html>, вёрнём body->innerHTML');
+			writeLog('Получен элемент с <html>');
+		}
+		// получен html
+		if ($params['strip_html']){
+			if (WEBP_DEBUGMODE){
+				writeLog('Включено удаление <html>, вёрнём body->innerHTML');
+			}
+			$moddedhtml = $document->first('body')->innerHtml();
+		} else {
+			if (WEBP_DEBUGMODE){
+				writeLog('Возвращаем цельный html');
+			}
+			$moddedhtml = $document->html();
+		}
+	} else {
+		// получен body
+		if (WEBP_DEBUGMODE){
+			writeLog('Получен элемент без <html>, возвращаем body->innerHTML');
 		}
 		$moddedhtml = $document->first('body')->innerHtml();
-	} else {
-		if (WEBP_DEBUGMODE){
-			writeLog('Возвращаем весь $document->html()');
-		}
-		$moddedhtml = $document->html();
 	}
 
 	// Воюем с кодировкой
