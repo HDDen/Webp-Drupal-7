@@ -816,7 +816,7 @@ function process_lazyload_once($elem, &$params){
 	} else {
 		$is_src_contains = $elem->getAttribute('src');
 		if (!is_null($is_src_contains)){
-			// Элемент содержит src, и это не изображение. Значит, это js/iframe.
+			// Элемент содержит src, и это не изображение. Значит, это js/iframe/source.
 			// Можем использовать js-плагин lazysizes, раз уж всё равно его подключили
 
 			// надстроим iframe
@@ -838,11 +838,11 @@ function process_lazyload_once($elem, &$params){
 		} else {
 			// нет атрибута src - возможно, video?
 			if ($tagname == 'video') {
-				// для видео нужно обработать постер и src
-				// пока работаем с постером
+				// для видео нужно обработать постер и sources
+				// пока работаем с постером. Селектор sources задаем отдельно, как video sources
 				$video_poster_src = $elem->getAttribute('poster');
 				if (!is_null($video_poster_src)){
-					$elem->setAttribute('poster', '');
+					$elem->removeAttribute('poster');
 					$elem->setAttribute('data-poster', $video_poster_src);
 				}
 			}
@@ -877,7 +877,15 @@ function process_lazyload_once($elem, &$params){
 		// если iframe и мы используем только нативную реализацию lazyloading, ничего не делаем
 	} else {
 		// добавим класс
-		$classlist = $elem->getAttribute('class');
+		// поддержка <source> - в этом случае, класс нужно добавлять к родителю
+		if ($tagname == 'source'){
+			if (WEBP_DEBUGMODE){
+				writeLog('process_lazy(): у нас элемент source, нужно назначать класс родителю');
+			}
+			$classlist = $elem->parent()->getAttribute('class');
+		} else {
+			$classlist = $elem->getAttribute('class');
+		}
 		if (is_null($classlist)){
 			// сейчас берем параметры, основываясь на теге
 			// т.е. чтобы получить параметры для '.image-resp', мы должны определить параметры для всего тега 'img'.
@@ -900,11 +908,26 @@ function process_lazyload_once($elem, &$params){
 				$classlist.= ' '.$addclass;
 			}
 		}
-		$elem->setAttribute('class', $classlist);
+		// продолжаем поддержку <source> - назначаем не самому элементу, а родителю
+		if ($tagname == 'source'){
+			if (WEBP_DEBUGMODE){
+				writeLog('process_lazy(): у нас элемент source, нужно назначать класс родителю');
+			}
+			$elem->parent()->setAttribute('class', $classlist);
+		} else {
+			if (WEBP_DEBUGMODE){
+				writeLog('process_lazy(): у нас обычный элемент, применяем класс к нему');
+			}
+			$elem->setAttribute('class', $classlist);
+		}
 
 		// добавим атрибут area-expand
 		if (isset($params['lazyload'][$tagname]) && isset($params['lazyload'][$tagname]['expand_preload_area']) && $params['lazyload'][$tagname]['expand_preload_area']){
-			$elem->setAttribute($params['lazyload'][$tagname]['expand_attr'], $params['lazyload'][$tagname]['expand_range']);
+			if ($tagname == 'source'){
+				$elem->parent()->setAttribute($params['lazyload'][$tagname]['expand_attr'], $params['lazyload'][$tagname]['expand_range']);
+			} else {
+				$elem->setAttribute($params['lazyload'][$tagname]['expand_attr'], $params['lazyload'][$tagname]['expand_range']);
+			}
 		} else {
 			// иначе удалим
 			// Захардкодил! Нужно бы исправить... todo
@@ -912,7 +935,12 @@ function process_lazyload_once($elem, &$params){
 			if (isset($params['lazyload'][$tagname]) && isset($params['lazyload'][$tagname]['expand_attr'])){
 				$expand_attr = $params['lazyload'][$tagname]['expand_attr'];
 			}
-			$elem->removeAttribute($expand_attr);
+
+			if ($tagname == 'source'){
+				$elem->parent()->removeAttribute($expand_attr);
+			} else {
+				$elem->removeAttribute($expand_attr);
+			}
 		}
 	}
 
