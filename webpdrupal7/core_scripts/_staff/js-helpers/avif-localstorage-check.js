@@ -1,0 +1,1 @@
+!function(){var a=document.documentElement.classList;if(!a.contains("avif-on")&&!a.contains("avif-off")){var n=window.localStorage.getItem("avifsupp");"1"==n?a.add("avif-on"):"0"==n&&a.add("avif-off")}}();
