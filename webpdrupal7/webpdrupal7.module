@@ -640,6 +640,17 @@ function webpdrupal7_form($form, &$form_state) {
     '#default_value' => variable_get('webpdrupal7_avifdetect_load', 4),
     '#description' => t('Adds "checked-avif" and "avif-on/-off"-classnames to html. Loads before webp-detect or unwebp.'),
   );
+    // load inline localstorage check
+    $form['webpdrupal7_experimental']['avif']['webpdrupal7_avifdetectlocalstorage_load'] = array(
+      '#type' => 'select',
+      '#title' => t('Inject inline localstorage checker:'),
+      '#options' => array(
+        0 => t('No'),
+        1 => t('Header, inline')
+      ),
+      '#default_value' => variable_get('webpdrupal7_avifdetectlocalstorage_load', 0),
+      '#description' => t('You can inject short js, which checking localstorage-saved param "avifsupp" and set class by its value. Alternative to full executing of avif-detect.js (now you can defer this with benefits of speed).'),
+    );
     // add avif-version if exists
   $form['webpdrupal7_experimental']['avif']['webpdrupal7_avif_store'] = array(
     '#type' => 'select',
@@ -732,6 +743,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_setsizes_csshelper',
     'webpdrupal7_fallback_alt',
     'webpdrupal7_avifdetect_load',
+    'webpdrupal7_avifdetectlocalstorage_load',
     'webpdrupal7_avif_store',
     'webpdrupal7_avif_customlocation',
     'webpdrupal7_avif_processon'
@@ -898,6 +910,22 @@ function webpdrupal7_preprocess_html(&$head_elements){
   	}
 
     // Вспомогательный js определения поддержки webp/avif в браузере (полезно для фоновых изображений)
+    // localstorage only checker
+    switch (intval(variable_get('webpdrupal7_avifdetectlocalstorage_load'))){
+      case 0:
+        break;
+      case 1:
+        $avif_ls_helper = [
+          '#tag' => 'script',
+          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-localstorage-check.js'),
+          '#attributes' => [
+            'id' => 'avif-ls-chk',
+          ],
+          '#weight' => -101,
+        ];
+        drupal_add_html_head($avif_ls_helper, 'avif_ls_helper');
+        break;
+    }
     // avifdetect
     switch (intval(variable_get('webpdrupal7_avifdetect_load'))){
       case 0:
