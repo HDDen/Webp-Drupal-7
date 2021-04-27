@@ -1722,24 +1722,19 @@ function modifyImagesWebp($output, $params = false){
 	if (WEBP_DEBUGMODE){
 		writeLog('Проверка, подрезаем ли html');
 	}
-	if ($params['strip_html']){
+	$moddedhtml_startpart = substr($moddedhtml, 0, 32);
+	if (stristr($moddedhtml_startpart, '<html')){
 		if (WEBP_DEBUGMODE){
-			writeLog('Подрезка включена');
+			writeLog('Получили $outut с тегом <html>');
 		}
-		$moddedhtml_startpart = substr($moddedhtml, 0, 32);
-		if (stristr($moddedhtml_startpart, '<html')){
-			if (WEBP_DEBUGMODE){
-				writeLog('Получили $outut с тегом <html>');
-			}
-			$received_html_tag = true;
-		} else {
-			if (WEBP_DEBUGMODE){
-				writeLog('Мы получали строку без <html>');
-			}
-			$received_html_tag = false;
+		$received_html_tag = true;
+	} else {
+		if (WEBP_DEBUGMODE){
+			writeLog('Мы получали строку без <html>');
 		}
-		unset($moddedhtml_startpart);
+		$received_html_tag = false;
 	}
+	unset($moddedhtml_startpart);
 
 	// Воюем с кодировкой (по необходимости)
 	//$moddedhtml = mb_convert_encoding($moddedhtml, 'HTML-ENTITIES', 'UTF-8');
@@ -1775,7 +1770,7 @@ function modifyImagesWebp($output, $params = false){
 	// return processed
 
 	// check, strip html or not
-	if (isset($received_html_tag) && $received_html_tag){
+	if ($received_html_tag){
 		if (WEBP_DEBUGMODE){
 			writeLog('Получен элемент с <html>');
 		}
