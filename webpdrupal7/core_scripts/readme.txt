@@ -14,7 +14,7 @@ if (function_exists('modifyImagesWebp')){
 echo $modified_output;
 // end webp
 
-Если используем lazyload, нужно подключить к сайту библиотеку lazysizes (_staff/js-helpers/lazysizes)
+Если используем lazyload, нужно подключить к сайту библиотеку lazysizes (staff/js/lazysizes)
 
 lazysizes.min.js отвечает за поддержку на img, lazysizes.unveilhooks.min.js - на остальных блоках, где фоновое изображение прописано в инлайновом стиле
 
@@ -22,7 +22,8 @@ lazysizes.min.js отвечает за поддержку на img, lazysizes.un
 
 function process_html($html_string) {
 
-  include_once $_SERVER['DOCUMENT_ROOT'] . '/other-includ/webp/output_modifier.php';
+  require('_settings.php'); // настройки по-умолчанию
+	include_once $_SERVER['DOCUMENT_ROOT'] . '/'.trim($webp_core_fallback_location, '/').'/output_modifier.php';
   if (function_exists('modifyImagesWebp')){
 
     $params = array(
@@ -90,9 +91,6 @@ function process_html($html_string) {
     return $modified_output;
   }
 }
-
-
-
 
 webp-on-demand-proxy.php : можно настроить использование nginx ($useNginx = true;), а именно заголовок X-Accel-Redirect
 

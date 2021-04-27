@@ -2,57 +2,372 @@
 
 require('_settings.php'); // настройки по-умолчанию
 
-define('HOMEDIR', ''); // домашняя папка сайта ( /var/site.com ). Еслу пусто, проверяем DUPAL_ROOT, или
+define('HOMEDIR', get_homedir()); // ищем папку сайта ( /var/site.com ).
 
-if (function_exists('variable_get')){
-	$webpproject_path = variable_get('webpdrupal7_processor_path');
-	$webpproject_path = trim($webpproject_path, '');
-} else {
-	$webpproject_path = trim($webp_core_fallback_location, '/');
+// Определяем путь до output_modifier.php от корня сайта. Используется, например, в логгере
+define('WEBPPROJECT', __DIR__);
+
+// подключение библиотек
+require_once WEBPPROJECT.'/libs/vendor/autoload.php';
+include_once WEBPPROJECT.'/staff/php/logger.php';
+
+use DiDom\Document;
+use WebPConvert\Convert\Converters\Stack;
+
+//$reconvert = forced reconvert, $trusted = dont check availability & file existence
+function convertWebpDem($source = false, $destination = false, $reconvert = false, $trusted = false){
+
+    if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+        if (function_exists('writeLog')){
+            writeLog('  convertWebpDem(): старт');
+        }
+    }
+
+    if (!$trusted){
+        // проверка на $source
+        if (!$source || !(file_exists($source))){
+
+            if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+                if (function_exists('writeLog')){
+                    writeLog('  convertWebpDem(): $source не передан или физически отсутствует');
+                    writeLog('  convertWebpDem(): $source = '.$source);
+                }
+            }
+
+            return false;
+        }
+
+        // проверка на возможность использования webp
+        // Сначала проверяем наличие куки. Куки мы ставим или из js-хелпера, или из апача, или из шаблона.
+        $canUse = false;
+        if (!isset($_COOKIE['webpactive'])) {
+            if( (strpos( $_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false) || (strpos( $_SERVER['HTTP_USER_AGENT'], ' Chrome/' ) !== false) ) {
+                $canUse = true;
+
+                //Неплохо было бы еще и установить куку
+                setcookie('webpactive', 'true', time()+60*60*24*7, '/', $_SERVER['SERVER_NAME']);
+            } else {
+                setcookie('webpactive', 'false', time()+60*60*24*7, '/', $_SERVER['SERVER_NAME']); // кука в false, если нет поддержки
+            }
+        } else {
+            if ($_COOKIE['webpactive'] === 'true'){
+                $canUse = true;
+            }
+        }
+
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('  convertWebpDem(): $canUse = '.var_export($canUse, true));
+            }
+        }
+
+        if (!$canUse){
+            return false;
+        }
+
+        if (!$destination){
+            $destination = strtok($source, '?') . '.webp';
+        }
+
+        // проверка на переконвертирование
+        if (file_exists($destination)){
+            if (!$reconvert){
+
+                if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+                    if (function_exists('writeLog')){
+                        writeLog('  convertWebpDem(): Файл уже существует, переконвертирование не разрешено');
+                    }
+                }
+
+                return true;
+            }
+        }
+    }
+
+    // проверка на тип файла - пропускаем только jpeg и png. Должна проверяться даже если стоит флаг trusted
+    $src_mimetype = mime_content_type(strtok($source, '?'));
+    if ( ($src_mimetype != 'image/jpeg') && ($src_mimetype != 'image/png') ){
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('  convertWebpDem(): Тип изображения не пригоден для конвертирования. '.PHP_EOL.'  $source = '.$source.PHP_EOL.'  $src_mimetype = '.$src_mimetype);
+            }
+        }
+
+        return false;
+    }
+
+    if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+        if (function_exists('writeLog')){
+            writeLog('  convertWebpDem(): Начинаем конвертирование');
+        }
+    }
+
+    // проверка на версию
+    $php_version = explode('.', phpversion());
+
+    if (intval($php_version[0]) == 5){
+        if (isset($php_version[1]) && (intval($php_version[1]) < 6)){
+
+            if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+                if (function_exists('writeLog')){
+                    writeLog('Версия PHP = '.phpversion().'. Минимальная - 5.6! Отказ.');
+                }
+            }
+
+            return false;
+        }
+    } else if (intval($php_version[0]) <= 5){
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('Версия PHP = '.phpversion().'. Минимальная - 5.6! Отказ.');
+            }
+        }
+    }
+
+    // default options
+    $options = array(
+        // PS: only set converters if you have strong reasons to do so
+        'converters' => [
+            'cwebp', 'vips', 'imagick', 'gmagick', 'imagemagick', 'graphicsmagick', 'wpc', 'gd'
+        ],
+
+        'metadata' => 'none',
+        'quality' => 90,
+        'encoding' => 'lossy',
+        //'near-lossless' => 75, // default is 60. Todo
+        //'cwebp-try-supplied-binary-for-os' => true, // true by default
+        //'cwebp-rel-path-to-precompiled-binaries' => '', // location. Commented to prevent override defaults
+
+        'png' => [
+            'gd-skip' => true,
+            'converters' => ['cwebp', 'vips', 'imagick', 'gmagick', 'imagemagick', 'graphicsmagick', 'wpc'],
+        ],
+
+        'jpeg' => [
+            'quality' => 'auto',      /* Set to same as jpeg (requires imagick or gmagick extension, not necessarily compiled with webp) */
+            'max-quality' => 95,      /* Only relevant if quality is set to "auto" */
+            'default-quality' => 90,  /* Fallback quality if quality detection isnt working */
+        ],
+
+        // As an alternative to prefixing, you can use "converter-options" to set a whole bunch of overrides in one go:
+        'converter-options' => [
+            'wpc' => [
+                'crypt-api-key-in-transfer' => false,
+                'api-key' => '', // 'string-type-key'
+                'api-url' => '', //https://example.com/webp-cloud/wpc.php',
+                'api-version' => 1,
+            ],
+            /*'cwebp' => [
+                //'command-line-options' => '-sharp_yuv',
+                //'try-common-system-paths' => false,
+                //'cwebp-try-cwebp' => false,
+                //'try-discovering-cwebp' => false,
+            ],*/
+        ],
+    );
+
+    // overriding options based on drupal module values
+    // global quality
+    if (defined('WEBP_QUALITY') && WEBP_QUALITY){
+        $options['quality'] = intval(WEBP_QUALITY);
+    }
+    // jpeg quality
+    if (defined('WEBP_JPEG_QUALITY') && WEBP_JPEG_QUALITY){
+        if (WEBP_JPEG_QUALITY == 'auto'){
+            $options['jpeg']['quality'] = 'auto';
+        } else {
+            $options['jpeg']['quality'] = intval(WEBP_JPEG_QUALITY);
+        }
+    }
+    // jpeg max-quality
+    if (defined('WEBP_JPEG_MAXQUALITY') && WEBP_JPEG_MAXQUALITY){
+        $options['jpeg']['max-quality'] = intval(WEBP_JPEG_MAXQUALITY);
+    }
+    // jpeg def-quality
+    if (defined('WEBP_JPEG_DEFQUALITY') && WEBP_JPEG_DEFQUALITY){
+        $options['jpeg']['default-quality'] = intval(WEBP_JPEG_DEFQUALITY);
+    }
+
+    // wpc options
+    if (defined('WEBP_WPC_CRYPT') && WEBP_WPC_CRYPT){
+        $options['converter-options']['wpc']['crypt-api-key-in-transfer'] = true;
+    }
+
+    if (defined('WEBP_WPC_KEY') && WEBP_WPC_KEY){
+        $options['converter-options']['wpc']['api-key'] = WEBP_WPC_KEY;
+    }
+
+    if (defined('WEBP_WPC_URL') && WEBP_WPC_URL){
+        $options['converter-options']['wpc']['api-url'] = WEBP_WPC_URL;
+    }
+
+    // precompiled options
+    if (defined('WEBP_TRY_PRECOMPILED')){
+    	if (WEBP_TRY_PRECOMPILED === 'force'){
+            $options['cwebp-try-supplied-binary-for-os'] = true;
+            $options['converter-options']['cwebp']['try-common-system-paths'] = false;
+            $options['converter-options']['cwebp']['cwebp-try-cwebp'] = false;
+            $options['converter-options']['cwebp']['try-discovering-cwebp'] = false;
+        } else if (WEBP_TRY_PRECOMPILED){
+    		$options['cwebp-try-supplied-binary-for-os'] = true;
+    	} else {
+    		$options['cwebp-try-supplied-binary-for-os'] = false;
+    	}
+    }
+    if (defined('WEBP_PRECOMPILED_PATH') && WEBP_PRECOMPILED_PATH){
+        $options['cwebp-rel-path-to-precompiled-binaries'] = WEBP_PRECOMPILED_PATH;
+    }
+
+    // custom cwebp commandline
+    if (defined('WEBP_CWEBP_COMMAND') && WEBP_CWEBP_COMMAND){
+        $options['converter-options']['cwebp']['command-line-options'] = WEBP_CWEBP_COMMAND;
+    }
+
+    // debug options
+    if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+        if (function_exists('writeLog')){
+            writeLog('  callWebp: масив options[]:');
+            writeLog(print_r($options, true));
+        }
+    }
+
+    Stack::convert($source, $destination, $options, $logger=null);
+
+    if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+        if (function_exists('writeLog')){
+            writeLog('  convertWebpDem(): Возвращаем true - предполагается успех');
+        }
+    }
+
+    return true;
 }
-define('WEBPPROJECT', $webpproject_path); // папка проекта, от домашней папки сайта
 
-define('DIDOM', 'libs/DiDom'); // папка DiDom, относительно домашнего пути
-define('WEBPCONVERT', 'libs/WebpConvert'); // папка WebpConvert, относительно домашнего пути
-define('MADMPLUGINS', 'libs/MadmPlugins'); // папка с прокси-плагинами, относительно домашнего пути
+function callWebp($source = false, $destination = false){
 
-/*
+    if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+        if (function_exists('writeLog')){
+            writeLog('  callWebp: стартовали');
+        }
+    }
 
-function THEME_process_html(&$variables) {
-	if (!path_is_admin(current_path())) {
-		require('_settings.php'); // настройки по-умолчанию
-		include_once $_SERVER['DOCUMENT_ROOT'] . '/'.trim($webp_core_fallback_location, '/').'/output_modifier.php';
-		if (function_exists('modifyImagesWebp')){
+    // проверка на $source
+    if (!$source || !(file_exists($source))){
 
-			$params = array(); // Настройки для селектора ('a.image') берутся из настроек его тега ('a'), а если для этого тега они не заданы, беру из настроек тега 'div' (можно их не определять, подтянутся дефолтные)
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('  callWebp: отсутствует путь к $source или отсутствует физически');
+                writeLog('  callWebp: полученный: '.$source);
+            }
+        }
+        return false;
+    }
 
-			$params = array(
-				'webp' => array(
-					'img' => true,
-				),
-				'lazyload' => array(
-					'img' => array(
-						'lazy' => true,
-					),
-					'iframe' => array(
-						'lazy' => true,
-					),
-					'.kapelnica_cnt, .categoryhead, .freviews, .fservices, .staffslider, .content_form' => array(
-						'lazy' => true, // shortcut and option for quickly disable
-					),
-				),
-				'ignore_lazy' => false,
-				'add_chromelazy_img' => 'lazy',
-				'debug' => false,
-        	);
+    // проверка destination
+    if (!$destination){
+        $destination = strtok($source, '?') . '.webp';
+    }
 
-			$modified_output = modifyImagesWebp($variables['page'], $params);
-	        $variables['page'] = $modified_output;
-		}
-	}
+    // умолчание
+    $result = false;
+    // проверка на поддержку webp
+    $canUse = false;
+
+    if (defined('WEBP_FORCE_CONVERSION') && (WEBP_FORCE_CONVERSION == true)){
+        $canUse = true; // только форсируем. Куки не ставим, для избежания проблем с IE и фоновыми картинками в webp
+    } else if (!isset($_COOKIE['webpactive'])) {
+
+        // несколько способов верификации
+        // заголовок accept
+        $accept_verification = false;
+        // юзер-агент хрома
+        $is_chrome = false;
+        // IE
+        $is_ie = false;
+
+        if (strpos( $_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false){
+            $accept_verification = true;
+        } else if (strpos( $_SERVER['HTTP_USER_AGENT'], ' Chrome/' ) !== false){
+            $is_chrome = true;
+        } else if (strpos( $_SERVER['HTTP_USER_AGENT'], 'Trident' ) !== false){
+            $is_ie = true;
+        }
+
+        if ( ($accept_verification || $is_chrome) && (!$is_ie)){
+            $canUse = true;
+
+            //Неплохо было бы еще и установить куки
+            setcookie('webpactive', 'true', time()+60*60*24*7, '/', $_SERVER['SERVER_NAME']);
+        }
+    } else {
+        if ($_COOKIE['webpactive'] === 'true'){
+            $canUse = true;
+        }
+    }
+
+    // проверка на существование конечного файла - чтобы не напрягать лишний раз серв
+    if ($canUse){
+
+        // проверка по флагу reconvert
+        $reconvert = false;
+        // проверяем по временной метке
+        if (defined('WEBP_RECONVERT_BYTIMESTAMP') && WEBP_RECONVERT_BYTIMESTAMP && file_exists($destination)){
+            clearstatcache();
+            $timestamp = filemtime($destination);
+            $target_timestamp = intval(WEBP_RECONVERT_BYTIMESTAMP);
+
+            if ($target_timestamp > $timestamp){
+                $reconvert = true;
+
+                if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+                    if (function_exists('writeLog')){
+                        writeLog('  callWebp: будет выполнена переконвертация по дате');
+                    }
+                }
+            }
+        }
+
+        if (!file_exists($destination) || $reconvert){
+
+            $result = convertWebpDem($source, $destination, $reconvert, true); // можно добавить к вызову аргумент $reconvert = true, тогда будет принудительное переконвертирование. $trusted - все проверки выполнены, не перепроверять
+
+            if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+                if (function_exists('writeLog')){
+                    writeLog('  callWebp: результат обращения к convertWebpDem() = '.var_export($result, true));
+                }
+            }
+        } else {
+
+            if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+                if (function_exists('writeLog')){
+                    writeLog('  callWebp: webp-версия уже существует');
+                }
+            }
+
+            $result = true; // webp-версия существует, поднимаем флаг
+        }
+    }
+
+    // ответ, использовать webp или исходное изображение
+    if ($result){
+
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('  callWebp: успех');
+            }
+        }
+
+        return true; //Конвертирование успешное! Отдаем webp
+    } else {
+
+        if (defined('WEBP_DEBUGMODE') && (WEBP_DEBUGMODE)){
+            if (function_exists('writeLog')){
+                writeLog('  callWebp: отказ');
+            }
+        }
+
+        return false; // Что-то пошло не так, используем оригинальный файл
+    }
 }
-
-*/
 
 function get_homedir(){
 	if (defined('DRUPAL_ROOT')){
@@ -60,50 +375,7 @@ function get_homedir(){
 	} else {
 		return $_SERVER['DOCUMENT_ROOT'];
 	}
-	// всё, что ниже, работает нестабильно, надо поотлаживать
-
-	// попробуем спарсить из рабочей директории скрипта, отсекая путь '/other-includ/webp/'
-	/*if (defined('HOMEDIR') && (HOMEDIR != '')){
-		return HOMEDIR; // optimisation, because get_homedir() will calling more than once
-	} else {
-		// работает нестабильно
-		if (isset($GLOBALS['HOMEDIR_WEBP_CONST']) && ($GLOBALS['HOMEDIR_WEBP_CONST'] != '')){
-			return $GLOBALS['HOMEDIR_WEBP_CONST'];
-		}
-
-		$path = trim(dirname(__FILE__), '/');
-		$trim_path = '/'.WEBPPROJECT;
-		$trim_length = strlen($trim_path);
-		if (substr($path, -$trim_length) == $trim_path){
-			$path_length = strlen($path);
-			$path_length = $path_length - $trim_length;
-			$path = substr($path, $path_length);
-		} else {
-			$path = $_SERVER['DOCUMENT_ROOT'];
-		}
-
-		$GLOBALS['HOMEDIR_WEBP_CONST'] == $path;
-
-		return $path;
-	}*/
-
 }
-
-$home = get_homedir();
-
-// including logger
-include_once $home.'/'.WEBPPROJECT.'/'.MADMPLUGINS.'/logger.php';
-
-// including DiDom
-if (!file_exists($home.'/'.WEBPPROJECT.'/'.DIDOM.'/vendor/autoload.php')){
-	if ($params['debug']){
-		writeLog('Невозможно подгрузить DiDOM!');
-		writeLog($home.'/'.WEBPPROJECT.'/'.DIDOM.'/vendor/autoload.php');
-	}
-	return false;
-}
-require_once $home.'/'.WEBPPROJECT.'/'.DIDOM.'/vendor/autoload.php';
-use DiDom\Document;
 
 function check_debugmode($params = false){
 	// Включает режим дебага, добавляет заголовки
@@ -211,91 +483,7 @@ function add_fallback_alt(&$elem, &$params){
 // Смешиваем полученные параметры с дефолтными
 function mix_params($params = false){
 
-	$default_params = array(
-		'webp' => array(
-			'img' => true, // convert to webp
-			'img_webpstore_attr' => 'srcset', // where store webp-version
-			'by_selector' => false, // false or comma-separated css-selectors, e.g. '.img, .img-resp'. Other imgs will be ignored
-			'allowed_extensions' => false, // false or comma-separated extensions without dots
-			'additional_tags' => false, // false or comma-separated css-selectors
-			'ignore_webp_on' => false, // false or comma-separated css-selectors
-			'force' => false, // force pushing webp-version
-			'store_converted_in' => false, // false or relative path, which will be added to orig path structure
-			'quality' => 87,
-			'jpeg_quality' => 87, // 'auto' / integer
-			'jpeg_max_quality' => 87,
-			'jpeg_defaultquality' => 87,
-			'cwebp' => array(
-				'commandline_options' => false, // false / string. Can add '-sharp_yuv', for example
-				'cwebp_try_precompiled' => true, // try precompiled cwebp-binaries, if isnt operable in system
-				'cwebp_use_precompiled_as_main' => false, // true or false. True disables using system version of cwebp
-				'relative_path' => false, // false / string. Custom relative path to binaries of cwebp from Cwebp.php
-			),
-			'wpc' => array(
-				'crypt_key' => false,
-				'key' => '',
-				'url' => '',
-			),
-		),
-		'avif' => array(
-			'enabled' => false, // search and store avif-version
-			'process_on' => '', // empty or comma-separates selectors
-			'path_prefix' => false, // false or prefix for original path structure, e.g. 'avif'. No slashes at begin or end 
-		),
-		'lazyload' => array( // array of tags or selectors
-			'img' => array( // parameters for others is equal, copy and change tagname
-				'lazy' => false, // shortcut and option for quickly disable
-				'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
-				'attr_store_orig' => 'data-srcset', // attr to store original, lazy-loaded img src
-				//'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
-				'inline_preloader_picture' => "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20874%20589'%3E%3C/svg%3E", // png is free to resize!
-				'expand_preload_area' => true, // expand image load area before it displays
-				'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
-				'expand_range' => '500', // default for expanding
-				'use_native' => false, // false/true. Use only loading="lazy"
-			),
-			'div' => array(
-				'lazy' => false, // dont process tag globally
-				'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
-				'attr_store_orig' => 'data-bg', // attr to store original, lazy-loaded img src
-				'inline_preloader_picture' => "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20874%20589'%3E%3C/svg%3E",
-				'expand_preload_area' => true, // expand image load area before it displays
-				'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
-				'expand_range' => '500', // default for expanding
-            ),
-            'iframe' => array(
-            	'lazy' => false, // disabled by default, recommend use lazy+use_chromelazy_instead to prevent disabling analytics iframe
-            	'add_chromelazy' => 'lazy', // just add loading="lazy" attr, false / value (auto|lazy|eager)
-            	'use_chromelazy_instead' => true, // use loading="lazy" attr instead of js-plugin
-            ),
-            'iframe[src*="youtube.com"]' => array( // disabled, but pre-configured
-              'lazy' => false,
-              'use_chromelazy_instead' => false,
-            ),
-		),
-		'additional_operations' => array( // additional useful and specific operations for DIDOM.
-            'instantpage' => array(
-              'enabled' => false,
-              'mode' => false, // false for whitelist (its more safe), 'regular' for regular.
-              'whitelist_selectors' => false, // false or string with selectors for prefetching
-            ),
-        ),
-		'cdn' => array( // opt for supporting CDN. Now this is limited to the adding cdn-domain to relative paths
-			'enabled' => false, // false / true
-			'domain' => false, // false or domain like "https://cdn.example.ru"
-			'external' => false, // false/true for abspaths/subdomains
-			'base_host' => false, // false or base domain like 'example.co.uk'
-		),
-		'strip_html' => false, // return whole <html> document or only <body> inner
-		'ignore_lazy' => false, // selectors for ignoring lazyload. In fact, these elems will be lazied, then unlazied :-/
-		'add_chromelazy_img' => false, // add loading="lazy" attr to img, false or attr value (auto|lazy|eager)
-		'caching' => false, // opt for enabling/disabling caching
-		'debug' => false, // opt for enabling/disabling debug headers
-		'place_log' => false, // path for output_modifier logfile
-		'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
-		'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>
-		'fallback_alt' => true, // add empty 'alt'-attribute if doesnt exists
-	);
+	require('_settings.php'); // чтобы заполучить дефолтные параметры
 
 	if ($params){
 		$mixed_params_array = array_replace_recursive($default_params, $params);
@@ -470,7 +658,7 @@ function process_webp($document, &$params = false){
 			foreach ($excluded_selectors_array as $exclude_selector) {
 				if ($elem->matches($exclude_selector)){
 					if (WEBP_DEBUGMODE){
-						writeLog('process_webp(): игнорирован элемент "'.$selector.'"');
+						writeLog('process_webp(): игнорирован элемент "'.$exclude_selector.'"');
 					}
 					continue 2;
 				}
@@ -1523,19 +1711,6 @@ function modifyImagesWebp($output, $params = false){
 
 	if (WEBP_DEBUGMODE){
 		writeLog('Стартовали');
-	}
-
-	// todo: cache
-
-	// including webp_template_plugin_proxy.php
-
-	if (file_exists(dirname(__FILE__).'/webp_template_plugin_proxy.php')){
-		require_once 'webp_template_plugin_proxy.php';
-	} else {
-		if (WEBP_DEBUGMODE){
-			writeLog('webp_template_plugin_proxy.php не найден! Выход...');
-		}
-		return $output;
 	}
 
 	// is enough preparations, let's work!

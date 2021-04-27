@@ -72,7 +72,7 @@ function webpdrupal7_form($form, &$form_state) {
   if (!$temporary){
     $temporary = drupal_get_path('module', 'webpdrupal7').'/core_scripts';
   }
-  $temporary .= '/_staff/checkWebpSupport.php';
+  $temporary .= '/staff/php/checkWebpSupport.php';
   $temporary = file_create_url($temporary);
 
   $form['webpdrupal7_webp']['check_abletoconvert'] = array(
@@ -604,7 +604,7 @@ function webpdrupal7_form($form, &$form_state) {
       1 => t('Yes'),
     ),
     '#default_value' => variable_get('webpdrupal7_setsizes_csshelper', 0),
-    '#description' => t('Rules are in webpdrupal7/core_scripts/_staff/img-width-height-helper.css'),
+    '#description' => t('Rules are in webpdrupal7/core_scripts/staff/css/img-width-height-helper.css'),
   );
 
   // <img> fallback alt
@@ -917,7 +917,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
       case 1:
         $avif_ls_helper = [
           '#tag' => 'script',
-          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-localstorage-check.js'),
+          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/staff/js/avif-localstorage-check.js'),
           '#attributes' => [
             'id' => 'avif-ls-chk',
           ],
@@ -932,7 +932,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
         $avif_detect_js = [
           '#tag' => 'script',
-          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js'),
+          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/staff/js/avif-on-off-class.min.js'),
           '#attributes' => [
             'id' => 'avif-detect',
           ],
@@ -942,7 +942,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
         break;
       case 1:
         // Header, external, blocking
-        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('scope' => 'header', 'type' => 'external', 'weight' => -100));
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/avif-on-off-class.min.js', array('scope' => 'header', 'type' => 'external', 'weight' => -100));
         break;
 
       case 2:
@@ -952,7 +952,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
           '#tag' => 'script',
           '#value' => '',
           '#attributes' => [
-            'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js',
+            'src' => $cdn.'/'.$webpdrupal7_core_path.'/staff/js/avif-on-off-class.min.js',
             'async' => "async",
           ],
           '#weight' => -100,
@@ -963,7 +963,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
       case 3:
         // Footer, defer
-        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/avif-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
         break;
 
       case 4:
@@ -976,7 +976,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
         $webp_detect_js = [
           '#tag' => 'script',
-          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js'),
+          '#value' => file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/staff/js/webp-on-off-class.min.js'),
           '#attributes' => [
             'id' => 'webp-detect',
           ],
@@ -987,7 +987,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
         break;
       case 1:
         // Header, external, blocking
-        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('scope' => 'header', 'type' => 'external', 'weight' => -100));
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/webp-on-off-class.min.js', array('scope' => 'header', 'type' => 'external', 'weight' => -100));
         break;
 
       case 2:
@@ -997,7 +997,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
           '#tag' => 'script',
           '#value' => '',
           '#attributes' => [
-            'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js',
+            'src' => $cdn.'/'.$webpdrupal7_core_path.'/staff/js/webp-on-off-class.min.js',
             'async' => "async",
           ],
         ];
@@ -1007,7 +1007,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
 
       case 3:
         // Footer, defer
-        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
         break;
 
       case 4:
@@ -1024,7 +1024,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
         '#tag' => 'script',
         '#value' => '',
         '#attributes' => [
-          'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/unwebp.min.js',
+          'src' => $cdn.'/'.$webpdrupal7_core_path.'/staff/js/unwebp.min.js',
           'async' => "async",
         ],
       ];
@@ -1055,17 +1055,17 @@ function webpdrupal7_preprocess_html(&$head_elements){
           // CDN support
           if ($useCDN){
             if ($useLozad){
-              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js', 'external');
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/lozad/lozad.min.js', 'external');
             } else {
-              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', 'external');
-              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', 'external');
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.min.js', 'external');
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.unveilhooks.min.js', 'external');
             }
           } else {
             if ($useLozad){
-              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js');
+              drupal_add_js($webpdrupal7_core_path.'/staff/js/lozad/lozad.min.js');
             } else {
-              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js');
-              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js');
+              drupal_add_js($webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.min.js');
+              drupal_add_js($webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.unveilhooks.min.js');
             }
           }
           break;
@@ -1077,7 +1077,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
               '#tag' => 'script',
               '#value' => '',
               '#attributes' => [
-                'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js',
+                'src' => $cdn.'/'.$webpdrupal7_core_path.'/staff/js/lozad/lozad.min.js',
                 'async' => "async",
               ],
             ];
@@ -1087,7 +1087,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
               '#tag' => 'script',
               '#value' => '',
               '#attributes' => [
-                'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js',
+                'src' => $cdn.'/'.$webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.min.js',
                 'async' => "async",
               ],
             ];
@@ -1097,7 +1097,7 @@ function webpdrupal7_preprocess_html(&$head_elements){
               '#tag' => 'script',
               '#value' => '',
               '#attributes' => [
-                'src' => $cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js',
+                'src' => $cdn.'/'.$webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.unveilhooks.min.js',
                 'async' => "async",
               ],
             ];
@@ -1112,17 +1112,17 @@ function webpdrupal7_preprocess_html(&$head_elements){
           // CDN support
           if ($useCDN){
             if ($useLozad){
-              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/lozad/lozad.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
             } else {
-              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
-              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+              drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
             }
           } else {
             if ($useLozad){
-              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lozad/lozad.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+              drupal_add_js($webpdrupal7_core_path.'/staff/js/lozad/lozad.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
             } else {
-              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
-              drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+              drupal_add_js($webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+              drupal_add_js($webpdrupal7_core_path.'/staff/js/lazysizes/lazysizes.unveilhooks.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
             }
           }
 
@@ -1132,26 +1132,26 @@ function webpdrupal7_preprocess_html(&$head_elements){
       // вспомогательный css для переопределения background-image ленивозагружаемого
       if ($lazy_additional_elems != false){
         /*if ($useCDN){
-          drupal_add_css($cdn.'/'.$webpdrupal7_core_path.'/_staff/css-lazyload-helper.css', 'external');
+          drupal_add_css($cdn.'/'.$webpdrupal7_core_path.'/staff/css/css-lazyload-helper.css', 'external');
         } else {
-          drupal_add_css($webpdrupal7_core_path.'/_staff/css-lazyload-helper.css');
+          drupal_add_css($webpdrupal7_core_path.'/staff/css/css-lazyload-helper.css');
         }*/
-        drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/css-lazyload-helper.css'), 'inline');
+        drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/staff/css/css-lazyload-helper.css'), 'inline');
       }
 
       // Вспомогательный css для исправления вытягивании img по высоте при добавлении атрибутов width/height
       if ($images_setsize_csshelper){
-        drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_staff/img-width-height-helper.css'), 'inline');
+        drupal_add_css(file_get_contents(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/staff/css/img-width-height-helper.css'), 'inline');
       }
     }
 
     // Вспомогательные js
     if ($useCDN){
-      //drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
-      drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+      //drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+      drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
     } else {
-      //drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
-      drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+      //drupal_add_js($webpdrupal7_core_path.'/staff/js/webp-on-off-class.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+      drupal_add_js($webpdrupal7_core_path.'/staff/js/helper-cookie.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
     }
 
     // Внедрение instantpage.js
@@ -1162,17 +1162,17 @@ function webpdrupal7_preprocess_html(&$head_elements){
         // include js-helper to add attribute to body
 
         if ($useCDN){
-          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage-starter-whitelist_mark-body.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+          drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/instantpage/instantpage-starter-whitelist_mark-body.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
         } else {
-          drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage-starter-whitelist_mark-body.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+          drupal_add_js($webpdrupal7_core_path.'/staff/js/instantpage/instantpage-starter-whitelist_mark-body.js', array('defer' => 'TRUE', 'scope' => 'footer'));
         }
       }
 
       // include core js
       if ($useCDN){
-        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
+        drupal_add_js($cdn.'/'.$webpdrupal7_core_path.'/staff/js/instantpage/instantpage.min.js', array('defer' => 'TRUE', 'scope' => 'footer', 'type' => 'external'));
       } else {
-        drupal_add_js($webpdrupal7_core_path.'/_staff/js-helpers/instantpage/instantpage.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
+        drupal_add_js($webpdrupal7_core_path.'/staff/js/instantpage/instantpage.min.js', array('defer' => 'TRUE', 'scope' => 'footer'));
       }
     }
   }
