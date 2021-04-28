@@ -7,7 +7,9 @@ $webp_core_fallback_location = 'other-includ/webp';
 
 // автовычисление пути
 if (!file_exists($_SERVER['DOCUMENT_ROOT'].'/'.$webp_core_fallback_location)){
-    $webp_core_fallback_location = str_replace($_SERVER['DOCUMENT_ROOT'].'/', '', __DIR__);
+    $outputmod__docrootlength = strlen($_SERVER['DOCUMENT_ROOT']) + 1; // docroot + slash
+    $webp_core_fallback_location = substr(__DIR__, $outputmod__docrootlength);
+    unset($outputmod__docrootlength);
 }
 
 // дефолтные настройки модификатора
