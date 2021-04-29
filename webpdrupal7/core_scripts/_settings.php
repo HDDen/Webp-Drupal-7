@@ -15,7 +15,7 @@ if (!file_exists($_SERVER['DOCUMENT_ROOT'].'/'.$webp_core_fallback_location)){
 // дефолтные настройки модификатора
 $default_params = array(
     'webp' => array(
-        'img' => true, // convert to webp
+        'img' => false, // convert to webp
         'img_webpstore_attr' => 'srcset', // where store webp-version
         'by_selector' => false, // false or comma-separated css-selectors, e.g. '.img, .img-resp'. Other imgs will be ignored
         'allowed_extensions' => false, // false or comma-separated extensions without dots
@@ -49,8 +49,7 @@ $default_params = array(
             'lazy' => false, // shortcut and option for quickly disable
             'class_add' => 'lazyload', // add classes, comma-separated (or just string with spaces? TODO!)
             'attr_store_orig' => 'data-srcset', // attr to store original, lazy-loaded img src
-            //'inline_preloader_picture' => 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', // inline variant of plug-preview
-            'inline_preloader_picture' => "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20874%20589'%3E%3C/svg%3E", // png is free to resize!
+            'inline_preloader_picture' => "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20874%20589'%3E%3C/svg%3E", // svg is free to resize
             'expand_preload_area' => true, // expand image load area before it displays
             'expand_attr' => 'data-expand', // from where read 'expand_preload_area' parameter
             'expand_range' => '500', // default for expanding
@@ -96,5 +95,5 @@ $default_params = array(
     'place_log' => false, // path for output_modifier logfile
     'asyncimg' => false, // false/true, will add attr "decoding=async" to all <img>
     'img_setsize' => false, // false / integer, mode for adding width/height attributes to al <img>
-    'fallback_alt' => true, // add empty 'alt'-attribute if doesnt exists
+    'fallback_alt' => false, // add empty 'alt'-attribute if doesnt exists
 );
