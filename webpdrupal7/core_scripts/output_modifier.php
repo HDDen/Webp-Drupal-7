@@ -758,7 +758,7 @@ function process_webp($document, &$params = false){
 				if ($cdn_webp_version){
 					$style = str_replace($bg_img_src, $cdn_webp_version, $style);
 				} else {
-					$style = str_replace($bg_img_src, $bg_img_src . '.webp', $style);
+					$style = str_replace($bg_img_src, $webp_version, $style);
 				}
 				$elem->setAttribute('style', $style);
 			}
