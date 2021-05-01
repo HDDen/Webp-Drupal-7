@@ -139,6 +139,104 @@ if ($_SERVER['REQUEST_URI'] == '/'){
     }
 }
 
+// Подключение js/css. Можем исходить от параметров, т.к. доступен массив $params
+// 1 - lozad, 2 - unwebp, 3 - webp-on-off, 4 - avif-on-off, 5 - img-width-height-helper, 6 - css-lazyload-helper.css
+$outputmod_forcelibs = true;
+// проверка установленного пути
+if ($outputmod_forcelibs && defined('OUTPUTMOD_WEBP_CORE_FALLBACK_LOCATION') && defined('WEBPPROJECT')){
+    // массив js
+    $outputmod__libs = array();
+    
+    // avif-on-off
+    if (file_exists(WEBPPROJECT.'/staff/js/avif-on-off-class.min.js')){
+        $outputmod__libs[] = new Element('script', file_get_contents(WEBPPROJECT.'/staff/js/avif-on-off-class.min.js'), array(
+            'id' => 'avif-on-off',
+			'data-skip-moving' => 'true'
+        ));
+    }
+
+    // webp-on-off
+    if (file_exists(WEBPPROJECT.'/staff/js/webp-on-off-class.min.js')){
+        $outputmod__libs[] = new Element('script', file_get_contents(WEBPPROJECT.'/staff/js/webp-on-off-class.min.js'), array(
+            'id' => 'webp-on-off',
+			'data-skip-moving' => 'true'
+        ));
+    }
+
+    // unwebp
+    if ( $params['webp']['img'] && ($params['webp']['force'] || ($params['webp']['img_webpstore_attr'] == 'src') ) && file_exists(WEBPPROJECT.'/staff/js/unwebp.min.js')){
+        $outputmod__libs[] = new Element('script', null, array(
+            'id' => 'unwebp',
+            'src' => '/'.OUTPUTMOD_WEBP_CORE_FALLBACK_LOCATION.'/staff/js/unwebp.min.js',
+            'async' => 'async',
+			'data-skip-moving' => 'true'
+        ));
+    }
+
+    // lozad
+    // проверить наличие селектора с lazy
+    $outputmod__usejslazylib = false;
+    foreach ($params['lazyload'] as $selector => $data){
+        if (isset($data['lazy']) && $data['lazy']){
+            $outputmod__usejslazylib = true;
+            break;
+        }
+    }
+    if ($outputmod__usejslazylib){
+        $outputmod__libs[] = new Element('script', null, array(
+            'id' => 'lozad',
+            'src' => '/'.OUTPUTMOD_WEBP_CORE_FALLBACK_LOCATION.'/staff/js/lozad/lozad.min.js',
+            'async' => 'async',
+			'data-skip-moving' => 'true'
+        ));
+    }
+
+    // массив css - делаем один стиль
+    $outmod__css = '';
+    // img-width-height-helper.css
+    if ($params['img_setsize'] && file_exists(WEBPPROJECT.'/staff/css/img-width-height-helper.css')){
+        $outmod__css .= '/* img-width-height-helper.css */'.PHP_EOL.file_get_contents(WEBPPROJECT.'/staff/css/img-width-height-helper.css').PHP_EOL;
+    }
+    // css-lazyload-helper.css
+    if ($outputmod__usejslazylib && file_exists(WEBPPROJECT.'/staff/css/css-lazyload-helper.css')){
+        $outmod__css .= '/* css-lazyload-helper.css */'.PHP_EOL.file_get_contents(WEBPPROJECT.'/staff/css/css-lazyload-helper.css').PHP_EOL;
+    }
+
+    // подключаем библиотеки
+    if (count($outputmod__libs)){
+        $outputmod__libs__cnt = $document->first('head');
+        if ($outputmod__libs__cnt){
+            $outputmod__libs__cnt->prependChild($outputmod__libs);
+            // отдельное подключение css - в конец
+            if ($outmod__css){
+                $outmod__css_elem = new Element('style', $outmod__css);
+                $outputmod__libs__cnt->appendChild($outmod__css_elem);
+            }
+        }
+    }
+}
+
+// canonical hardfix
+$didom__canonicals = $document->find('link[rel="canonical"]');
+// если существует
+if (count($didom__canonicals) > 0){
+    foreach ($didom__canonicals as $didom__canonical){
+        // модифицируем оригинал, отбросив get-параметры
+        $didom__canonical__cnt = $didom__canonical->getAttribute('href');
+        if ($didom__canonical__cnt){
+            $didom__canonical__cnt = strtok($didom__canonical__cnt, '?');
+            $didom__canonical->setAttribute('href', $didom__canonical__cnt);
+        }
+    }
+} else {
+    // если нет, нужно создать
+    $didom__canonical__cnt = $document->first('head');
+    if ($didom__canonical__cnt){
+        $didom__canonical = new Element('link', null, array('rel' => 'canonical', 'href' => strtolower(strtok('https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'], '?'))));
+        $didom__canonical__cnt->appendChild($didom__canonical);
+    }
+}
+
 /**
  * Добавляем микроразметку
  */
