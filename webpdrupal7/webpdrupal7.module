@@ -891,7 +891,19 @@ function webpdrupal7_preprocess_html(&$head_elements){
     // Получим домашнюю директорию
     $webpdrupal7_core_path = variable_get('webpdrupal7_processor_path');
     if ($webpdrupal7_core_path == ''){
-      require('core_scripts/_settings.php'); // настройки по-умолчанию
+      
+      if (file_exists(DRUPAL_ROOT.'/sites/all/modules/webpdrupal7/core_scripts/_settings.'.$_SERVER['SERVER_NAME'].'.php')){
+        include('core_scripts/_settings.'.$_SERVER['SERVER_NAME'].'.php');
+      } else if (file_exists(DRUPAL_ROOT.'/sites/all/modules/webpdrupal7/core_scripts/_settings.php')){
+        include('core_scripts/_settings.php');
+      } else {
+        include('core_scripts/default._settings.php');
+      }
+
+      if (!isset($default_params)){
+        return false; // если не подключили параметры даже по запасному пути, уходим
+      }
+
       $webpdrupal7_core_path = trim($webp_core_fallback_location, '/');
     }
 
@@ -1184,7 +1196,22 @@ function webpdrupal7_preprocess_html(&$head_elements){
  */
 function webpdrupal7_process_html(&$variables) {
 
-  require('core_scripts/_settings.php'); // настройки по-умолчанию
+  $webpdrupal7_core_path = variable_get('webpdrupal7_processor_path');
+  if ($webpdrupal7_core_path == ''){
+    $webpdrupal7_core_path = 'sites/all/modules/webpdrupal7/core_scripts';
+  }
+
+  if (file_exists(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_settings.'.$_SERVER['SERVER_NAME'].'.php')){
+    include('core_scripts/_settings.'.$_SERVER['SERVER_NAME'].'.php');
+  } else if (file_exists(DRUPAL_ROOT.'/'.$webpdrupal7_core_path.'/_settings.php')){
+    include('core_scripts/_settings.php');
+  } else {
+    include('core_scripts/default._settings.php');
+  }
+
+  if (!isset($default_params)){
+    return false; // если не подключили параметры даже по запасному пути, уходим
+  }
 
   $use_prelog = false;
 
