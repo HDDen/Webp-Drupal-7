@@ -619,6 +619,18 @@ function webpdrupal7_form($form, &$form_state) {
     '#description' => t('Add alt="" to all imgs without'),
   );
 
+  // additional minifying
+  $form['webpdrupal7_experimental']['webpdrupal7_minify_html'] = array(
+    '#type' => 'select',
+    '#title' => t('Minify result HTML-markup:'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#default_value' => variable_get('webpdrupal7_minify_html', 0),
+    //'#description' => t(''),
+  );
+
     // avif-section
   $form['webpdrupal7_experimental']['avif'] = array(
     '#type' => 'fieldset',
@@ -742,6 +754,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_setsizes',
     'webpdrupal7_setsizes_csshelper',
     'webpdrupal7_fallback_alt',
+    'webpdrupal7_minify_html',
     'webpdrupal7_avifdetect_load',
     'webpdrupal7_avifdetectlocalstorage_load',
     'webpdrupal7_avif_store',
@@ -1616,6 +1629,11 @@ function webpdrupal7_process_html(&$variables) {
 
         // add alt="async" to <img>-tags
         $params['fallback_alt'] = variable_get('webpdrupal7_fallback_alt');
+        
+        // minify html
+        if (variable_get('webpdrupal7_minify_html')){
+          $params['minify_html'] = true;
+        }
 
         // AVIF
         if (variable_get('webpdrupal7_avif_store') != false){
