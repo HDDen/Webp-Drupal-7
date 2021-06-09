@@ -628,7 +628,7 @@ function webpdrupal7_form($form, &$form_state) {
       1 => t('Yes'),
     ),
     '#default_value' => variable_get('webpdrupal7_minify_html', 0),
-    //'#description' => t(''),
+    '#description' => t('Very heavy process, recommended to use only with caching!'),
   );
 
     // avif-section
