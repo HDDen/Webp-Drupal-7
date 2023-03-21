@@ -338,6 +338,13 @@ function webpdrupal7_form($form, &$form_state) {
       //'#description' => t(''),
   );
 
+    // disable on get-parameters
+  $form['webpdrupal7_lazyload']['webpdrupal7_lazy_getdisable'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Disable lazyload on get-parameters:'),
+      '#default_value' => variable_get('webpdrupal7_lazy_getdisable', ''),
+  );
+
     // <img> expand range
   $form['webpdrupal7_lazyload']['webpdrupal7_lazy_img_expand'] = array(
     '#type' => 'textfield',
@@ -733,6 +740,7 @@ function webpdrupal7_get_transferable_params_list(){
     'webpdrupal7_lazy_div_expand',
     'webpdrupal7_chromelazy',
     'webpdrupal7_lazy_additional_selectors',
+    'webpdrupal7_lazy_getdisable',
     'webpdrupal7_lazy_dontprocess',
     'webpdrupal7_iframe_lazymode',
     'webpdrupal7_lazy_use_lozad',
@@ -1438,6 +1446,15 @@ function webpdrupal7_process_html(&$variables) {
         // addition to enable only native lazy-loading on <imgs>
         if ($lazy_imgprocess == 2){
           $params['lazyload']['img']['use_native'] = true;
+        }
+
+        // ignore by get-parameters (compatibility with amp)
+        if (isset($_GET) && $_GET){
+          $lazy_disable_onGet = variable_get('webpdrupal7_lazy_getdisable');
+          if ($lazy_disable_onGet){
+            $lazy_disable_onGet = explode(',', $lazy_disable_onGet);
+            $params['lazy_disable_get_parameters'] = $lazy_disable_onGet;
+          }
         }
 
           // img lazyloading expand_range
